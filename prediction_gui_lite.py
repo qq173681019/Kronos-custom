@@ -108,7 +108,7 @@ class KronosPredictor:
         
         # 在UI设置完成后尝试加载多模型预测器
         try:
-            from model.multi_model_predictor import MultiModelPredictor
+            # from model.multi_model_predictor import MultiModelPredictor  # 轻量版移除
             self.multi_model_available = True
             self.log_message("🤖 多模型预测器加载成功")
         except ImportError as e:
@@ -1396,7 +1396,7 @@ class KronosPredictor:
             # 尝试使用多模型预测器
             if self.multi_model_available and self.multi_model_predictor is None:
                 try:
-                    from model.multi_model_predictor import MultiModelPredictor
+                    # from model.multi_model_predictor import MultiModelPredictor  # 轻量版移除
                     weights = self.get_ensemble_weights()
                     self.multi_model_predictor = MultiModelPredictor(weights)
                     self.log_message(f"🔧 权重设置: {weights}")
@@ -3803,48 +3803,13 @@ class KronosPredictor:
             # 在后台线程运行分析
             def run_analysis():
                 try:
-                    # 如果文件名包含非ASCII字符，创建临时副本
-                    temp_file = None
-                    analysis_file = csv_file
-                    
-                    if not csv_file.isascii():
-                        # 创建临时文件避免编码问题
-                        import tempfile
-                        import shutil
-                        temp_file = os.path.join(os.path.dirname(csv_file), "temp_analysis.csv")
-                        shutil.copy2(csv_file, temp_file)
-                        analysis_file = temp_file
-                        
-                        # 更新命令中的文件路径
-                        cmd[2] = analysis_file
-                    
-                    # 运行分析命令，显式设置编码
-                    result = subprocess.run(
-                        cmd, 
-                        capture_output=True, 
-                        text=True, 
-                        cwd=os.getcwd(),
-                        encoding='utf-8',
-                        errors='replace'
-                    )
-                    
-                    # 清理临时文件
-                    if temp_file and os.path.exists(temp_file):
-                        try:
-                            os.remove(temp_file)
-                        except:
-                            pass
+                    # 运行分析命令
+                    result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
                     
                     # 在主线程中更新UI
                     self.root.after(0, lambda: self.handle_csv_analysis_result(result, csv_file))
                     
                 except Exception as e:
-                    # 清理临时文件
-                    if temp_file and os.path.exists(temp_file):
-                        try:
-                            os.remove(temp_file)
-                        except:
-                            pass
                     self.root.after(0, lambda: self.log_message(f"❌ 分析执行失败: {str(e)}"))
             
             # 启动后台线程
@@ -3943,11 +3908,8 @@ class KronosPredictor:
             output_text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             output_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
             
-            # 配置颜色标签
-            self.configure_text_colors(output_text_widget)
-            
-            # 插入带颜色的输出文本
-            self.insert_colored_text(output_text_widget, output_text)
+            # 插入输出文本
+            output_text_widget.insert(tk.END, output_text)
             output_text_widget.config(state='disabled')
             
             # 按钮区域
@@ -3990,67 +3952,6 @@ class KronosPredictor:
                 messagebox.showerror("错误", "文件夹不存在！")
         except Exception as e:
             self.log_message(f"❌ 打开文件夹失败: {str(e)}")
-    
-    def configure_text_colors(self, text_widget):
-        """为Text组件配置颜色标签"""
-        # 配置不同颜色的标签
-        text_widget.tag_configure("green", foreground="#00AA00", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("red", foreground="#DD0000", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("yellow", foreground="#DDAA00", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("blue", foreground="#0066DD", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("cyan", foreground="#00AAAA", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("magenta", foreground="#AA00AA", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("orange", foreground="#FF6600", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("purple", foreground="#6600FF", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("brown", foreground="#AA5500", font=('Consolas', 9, 'bold'))
-        
-        # 交易建议颜色
-        text_widget.tag_configure("strong_buy", foreground="#00CC00", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("buy", foreground="#44AA44", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("weak_buy", foreground="#66AA66", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("hold", foreground="#888888", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("weak_sell", foreground="#AA6666", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("sell", foreground="#AA4444", font=('Consolas', 9, 'bold'))
-        text_widget.tag_configure("strong_sell", foreground="#CC0000", font=('Consolas', 9, 'bold'))
-    
-    def insert_colored_text(self, text_widget, text_content):
-        """插入带颜色的文本内容"""
-        import re
-        
-        # 移除ANSI转义序列并根据内容添加颜色
-        lines = text_content.split('\n')
-        
-        for line in lines:
-            # 移除ANSI转义序列
-            clean_line = re.sub(r'\x1b\[[0-9;]*m', '', line)
-            
-            # 根据内容判断颜色
-            if "强烈买入" in clean_line or "Strong Buy" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "strong_buy")
-            elif "买入" in clean_line or "Buy" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "buy")
-            elif "弱买入" in clean_line or "Weak Buy" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "weak_buy")
-            elif "持有" in clean_line or "Hold" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "hold")
-            elif "弱卖出" in clean_line or "Weak Sell" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "weak_sell")
-            elif "卖出" in clean_line or "Sell" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "sell")
-            elif "强烈卖出" in clean_line or "Strong Sell" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "strong_sell")
-            elif "✅" in clean_line or "成功" in clean_line or "完成" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "green")
-            elif "❌" in clean_line or "错误" in clean_line or "失败" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "red")
-            elif "⚠️" in clean_line or "警告" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "yellow")
-            elif "📊" in clean_line or "分析" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "blue")
-            elif "💰" in clean_line or "价格" in clean_line:
-                text_widget.insert(tk.END, clean_line + '\n', "cyan")
-            else:
-                text_widget.insert(tk.END, clean_line + '\n')
     
     def view_csv_summary_report(self, result_dir):
         """查看CSV总结报告"""
@@ -4105,74 +4006,14 @@ class KronosPredictor:
             columns = list(df.columns)
             tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
             
-            # 配置Treeview颜色标签 - 按照中国股市传统颜色
-            tree.tag_configure('strong_buy', background='#FFE8E8', foreground='#CC0000')     # 红色 - 强烈买入
-            tree.tag_configure('buy', background='#FFEEEE', foreground='#DD0000')           # 红色 - 买入
-            tree.tag_configure('weak_buy', background='#FFFF99', foreground='#CC6600')      # 明显黄色 - 少量买入
-            tree.tag_configure('hold', background='#F5F5F5', foreground='#666666')          # 灰色 - 观望
-            tree.tag_configure('weak_sell', background='#E8F8E8', foreground='#228B22')     # 绿色 - 少量卖出
-            tree.tag_configure('sell', background='#E0F0E0', foreground='#008000')          # 绿色 - 卖出
-            tree.tag_configure('strong_sell', background='#D8F0D8', foreground='#006400')   # 深绿色 - 强烈卖出
-            tree.tag_configure('success', background='#E8F5E8', foreground='#2E7D2E')
-            tree.tag_configure('error', background='#FFE8E8', foreground='#D32F2F')
-            
             # 配置列
             for col in columns:
                 tree.heading(col, text=col)
-                if col == '股票代码':
-                    tree.column(col, width=80, anchor='center')
-                elif col == '建议':
-                    tree.column(col, width=120, anchor='center')
-                elif col == '建议强度':
-                    tree.column(col, width=80, anchor='center')
-                elif col == '建议评分':
-                    tree.column(col, width=80, anchor='center')
-                else:
-                    tree.column(col, width=100, anchor='center')
+                tree.column(col, width=100, anchor='center')
             
-            # 插入数据并设置颜色
+            # 插入数据
             for index, row in df.iterrows():
-                values = list(row)
-                
-                # 格式化股票代码为6位完整格式
-                if '股票代码' in df.columns:
-                    stock_code_index = df.columns.get_loc('股票代码')
-                    original_code = str(values[stock_code_index])
-                    if original_code.isdigit():
-                        values[stock_code_index] = original_code.zfill(6)  # 补齐到6位
-                
-                # 确定行的颜色标签
-                tag = ''
-                if '建议' in df.columns:
-                    recommendation = str(row['建议']).strip()
-                    # 注意：要先检查更具体的匹配，再检查一般的匹配
-                    if "强烈买入" in recommendation:
-                        tag = 'strong_buy'
-                    elif "少量买入" in recommendation:  # 先检查少量买入
-                        tag = 'weak_buy'
-                    elif "买入" in recommendation:     # 再检查一般买入
-                        tag = 'buy'
-                    elif "强烈卖出" in recommendation:
-                        tag = 'strong_sell'
-                    elif "少量卖出" in recommendation:
-                        tag = 'weak_sell'
-                    elif "卖出" in recommendation:
-                        tag = 'sell'
-                    elif "观望" in recommendation or "持有" in recommendation:
-                        tag = 'hold'
-                
-                # 插入行数据
-                item_id = tree.insert('', 'end', values=values, tags=(tag,))
-                        
-                # 设置预测状态的图标
-                if '预测状态' in df.columns:
-                    status = str(row['预测状态']).strip()
-                    if status == '成功':
-                        tree.set(item_id, '预测状态', f"✅ {status}")
-                    elif status == '失败':
-                        tree.set(item_id, '预测状态', f"❌ {status}")
-                    else:
-                        tree.set(item_id, '预测状态', f"⚠️ {status}")
+                tree.insert('', 'end', values=list(row))
             
             # 添加滚动条
             v_scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)

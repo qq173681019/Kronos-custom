@@ -1,0 +1,84 @@
+{
+  "stock_code": "600498",
+  "timeframe": "daily",
+  "prediction_date": "2025-11-03 17:41:19",
+  "historical_data_points": 20,
+  "pred_days": 1,
+  "multi_model": {
+    "technical": {
+      "prices": [
+        23.856
+      ],
+      "method": "technical_indicators",
+      "signals": {
+        "macd": -1,
+        "rsi": 0,
+        "ma": -1,
+        "bollinger": 0
+      }
+    },
+    "machine_learning": {
+      "prices": [
+        23.85551127819549
+      ],
+      "method": "simple_trend",
+      "trend": -0.144488721804512
+    },
+    "support_resistance": {
+      "prices": [
+        23.837212121212122
+      ],
+      "method": "support_resistance",
+      "support_levels": [
+        24.45,
+        25.09
+      ],
+      "resistance_levels": [],
+      "next_support": 22.799999999999997,
+      "next_resistance": 25.200000000000003
+    },
+    "ensemble": {
+      "prices": [
+        23.850168147641835
+      ],
+      "method": "ensemble",
+      "weights": {
+        "technical": 0.3,
+        "ml": 0.4,
+        "support_resistance": 0.3
+      }
+    },
+    "confidence": {
+      "overall_confidence": 0.9996333781618091,
+      "price_consistency": 0.9996333781618091,
+      "std_deviation": 0.008743774830969005
+    }
+  },
+  "summary": {
+    "current_price": 24.0,
+    "predicted_prices": [
+      23.850168147641835
+    ],
+    "price_changes": [
+      -0.1498318523581652
+    ],
+    "price_change_pcts": [
+      -0.6242993848256884
+    ],
+    "confidence": 0.9996333781618091
+  },
+  "trading_signal": {
+    "recommendation": "少量买入",
+    "confidence": "中等",
+    "score": 1,
+    "details": {
+      "kdj_score": 1,
+      "macd_score": 0,
+      "trend_score": 0,
+      "pred_trend": 0,
+      "current_k": 22.642271526730294,
+      "current_d": 34.29445711187217,
+      "current_j": 0.0
+    }
+  }
+}

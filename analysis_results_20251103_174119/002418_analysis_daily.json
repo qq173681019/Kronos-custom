@@ -1,0 +1,83 @@
+{
+  "stock_code": "002418",
+  "timeframe": "daily",
+  "prediction_date": "2025-11-03 17:41:19",
+  "historical_data_points": 20,
+  "pred_days": 1,
+  "multi_model": {
+    "technical": {
+      "prices": [
+        4.86904
+      ],
+      "method": "technical_indicators",
+      "signals": {
+        "macd": 1,
+        "rsi": 0,
+        "ma": 1,
+        "bollinger": 0
+      }
+    },
+    "machine_learning": {
+      "prices": [
+        4.844984962406015
+      ],
+      "method": "simple_trend",
+      "trend": 0.004984962406014916
+    },
+    "support_resistance": {
+      "prices": [
+        4.929454545454545
+      ],
+      "method": "support_resistance",
+      "support_levels": [
+        4.14
+      ],
+      "resistance_levels": [],
+      "next_support": 4.14,
+      "next_resistance": 5.082
+    },
+    "ensemble": {
+      "prices": [
+        4.8775423485987695
+      ],
+      "method": "ensemble",
+      "weights": {
+        "technical": 0.3,
+        "ml": 0.4,
+        "support_resistance": 0.3
+      }
+    },
+    "confidence": {
+      "overall_confidence": 0.992720273342976,
+      "price_consistency": 0.992720273342976,
+      "std_deviation": 0.03553350937498605
+    }
+  },
+  "summary": {
+    "current_price": 4.84,
+    "predicted_prices": [
+      4.8775423485987695
+    ],
+    "price_changes": [
+      0.03754234859876959
+    ],
+    "price_change_pcts": [
+      0.7756683594787106
+    ],
+    "confidence": 0.992720273342976
+  },
+  "trading_signal": {
+    "recommendation": "少量买入",
+    "confidence": "中等",
+    "score": 0,
+    "details": {
+      "kdj_score": 0,
+      "macd_score": 0,
+      "trend_score": 0,
+      "pred_trend": 0,
+      "current_k": 64.79866572740985,
+      "current_d": 55.546809612915965,
+      "current_j": 83.30237795639763
+    }
+  }
+}
