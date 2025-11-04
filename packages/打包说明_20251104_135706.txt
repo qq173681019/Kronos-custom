@@ -1,0 +1,78 @@
+Kronos股票预测系统 - 分散打包说明
+打包时间: 2025-11-04 13:57:06
+============================================================
+
+📦 压缩包列表:
+----------------------------------------
+ 1. kronos-core-01_20251104_135706.zip
+    类别: analysis, gui, images
+    文件数: 17
+    大小: 6.73 MB
+    主要文件:
+      - data\600487_prediction_chart_daily.png
+      - data\600380_prediction_chart_daily.png
+      - data\600326_prediction_chart_daily.png
+      - data\000066_prediction_chart_daily.png
+      - data\603936_prediction_chart_daily.png
+      ... 等12个文件
+
+ 2. kronos-model-02_20251104_135706.zip
+    类别: analysis, model, docs
+    文件数: 5
+    大小: 0.10 MB
+    主要文件:
+      - model\kronos.py
+      - model\module.py
+      - model\multi_model_predictor.py
+      - README.md
+      - analyze_csv_stocks.py
+
+ 3. kronos-core-03_20251104_135706.zip
+    类别: data, docs, core
+    文件数: 27
+    大小: 0.07 MB
+    主要文件:
+      - smart_packer.py
+      - build_lite_exe.py
+      - data\002497_historical_15min.csv
+      - data\688981_historical_15min.csv
+      - data\688981_historical_5min.csv
+      ... 等22个文件
+
+ 4. kronos-misc-04_20251104_135706.zip
+    类别: misc, docs, data
+    文件数: 28
+    大小: 0.03 MB
+    主要文件:
+      - KronosPredictor_Lite.spec
+      - data\600977_prediction_daily.csv
+      - data\600977_prediction_15min.csv
+      - LICENSE
+      - data\600326_prediction_daily.csv
+      ... 等23个文件
+
+ 5. kronos-model-05_20251104_135706.zip
+    类别: data, model, docs
+    文件数: 4
+    大小: 0.00 MB
+    主要文件:
+      - model\__init__.py
+      - start_gui_lite.bat
+      - start_gui.bat
+      - 演示批量分析.csv
+
+----------------------------------------
+总计: 5 个压缩包, 81 个文件, 6.92 MB
+
+📋 使用说明:
+1. 下载所有压缩包到同一目录
+2. 按序号顺序解压所有压缩包
+3. 运行 start_gui_lite.bat 或 start_gui.bat 启动程序
+
+🔧 系统要求:
+- Python 3.8+
+- 运行 install_requirements.bat 安装依赖
+- Windows系统推荐使用批处理文件启动
+
+📞 技术支持:
+如有问题，请参考 README.md 文件或联系开发者

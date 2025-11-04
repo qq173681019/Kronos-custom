@@ -5,6 +5,34 @@ Kronos股票预测GUI应用程序
 支持直接在程序中显示图表，集成多模型预测功能
 """
 
+import sys
+import os
+import locale
+
+# 设置编码处理
+if sys.platform.startswith('win'):
+    # Windows系统编码处理
+    try:
+        # 设置控制台编码为UTF-8
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8')
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8')
+        
+        # 设置环境变量
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        
+        # 尝试设置本地化
+        try:
+            locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+        except:
+            try:
+                locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+            except:
+                pass  # 忽略locale设置错误
+    except Exception as e:
+        print(f"编码设置警告: {e}")
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import matplotlib
@@ -4605,15 +4633,15 @@ class KronosPredictor:
         try:
             # 根据5级建议类型设置颜色和图标
             if action == "强烈买入":
-                bg_color = "#d4edda"  # 深绿色背景
-                fg_color = "#155724"  # 深绿色文字
+                bg_color = "#ffebee"  # 浅红色背景
+                fg_color = "#c62828"  # 红色文字
                 icon = "🚀"
                 action_display = "强烈买入"
                 detail_reason = "技术面极好，建议积极买入"
             elif action == "少买":
-                bg_color = "#d1ecf1"  # 浅绿色背景
-                fg_color = "#0c5460"  # 深蓝绿文字
-                icon = "�"
+                bg_color = "#fff8e1"  # 浅黄色背景
+                fg_color = "#f57f17"  # 黄色文字
+                icon = "📈"
                 action_display = "少量买入"
                 detail_reason = "技术面偏好，建议小仓位买入"
             elif action == "观望":
@@ -4623,14 +4651,14 @@ class KronosPredictor:
                 action_display = "观望等待"
                 detail_reason = "技术面不明确，建议等待机会"
             elif action == "少卖":
-                bg_color = "#fff3cd"  # 浅黄色背景
-                fg_color = "#856404"  # 深黄色文字
+                bg_color = "#e8f5e8"  # 浅绿色背景
+                fg_color = "#2e7d32"  # 绿色文字
                 icon = "📉"
                 action_display = "少量卖出"
                 detail_reason = "技术面偏差，建议小仓位减持"
             elif action == "强烈卖出":
-                bg_color = "#f8d7da"  # 深红色背景
-                fg_color = "#721c24"  # 深红色文字
+                bg_color = "#e3f2fd"  # 浅蓝色背景
+                fg_color = "#1976d2"  # 蓝色文字
                 icon = "⚠️"
                 action_display = "强烈卖出"
                 detail_reason = "技术面极差，建议积极减仓"

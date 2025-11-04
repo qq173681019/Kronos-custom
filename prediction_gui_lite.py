@@ -5,6 +5,34 @@ Kronos股票预测GUI应用程序
 支持直接在程序中显示图表，集成多模型预测功能
 """
 
+import sys
+import os
+import locale
+
+# 设置编码处理
+if sys.platform.startswith('win'):
+    # Windows系统编码处理
+    try:
+        # 设置控制台编码为UTF-8
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8')
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8')
+        
+        # 设置环境变量
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+        
+        # 尝试设置本地化
+        try:
+            locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+        except:
+            try:
+                locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+            except:
+                pass  # 忽略locale设置错误
+    except Exception as e:
+        print(f"编码设置警告: {e}")
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import matplotlib
@@ -4009,11 +4037,71 @@ class KronosPredictor:
             # 配置列
             for col in columns:
                 tree.heading(col, text=col)
-                tree.column(col, width=100, anchor='center')
+                if col == '股票代码':
+                    tree.column(col, width=80, anchor='center')
+                elif col == '建议':
+                    tree.column(col, width=120, anchor='center')
+                elif col == '建议强度':
+                    tree.column(col, width=80, anchor='center')
+                elif col == '建议评分':
+                    tree.column(col, width=80, anchor='center')
+                else:
+                    tree.column(col, width=100, anchor='center')
             
-            # 插入数据
+            # 配置颜色标签 - 按照用户要求的颜色方案
+            tree.tag_configure('strong_buy', background='#ffebee', foreground='#c62828')     # 红色 - 强烈买入
+            tree.tag_configure('buy', background='#ffebee', foreground='#c62828')           # 红色 - 买入
+            tree.tag_configure('weak_buy', background='#fff8e1', foreground='#f57f17')      # 黄色 - 少量买入
+            tree.tag_configure('hold', background='#e8f4f8', foreground='#2c3e50')          # 蓝灰色 - 观望
+            tree.tag_configure('weak_sell', background='#e8f5e8', foreground='#2e7d32')     # 绿色 - 少量卖出
+            tree.tag_configure('sell', background='#e3f2fd', foreground='#1976d2')          # 蓝色 - 卖出
+            tree.tag_configure('strong_sell', background='#e3f2fd', foreground='#1976d2')   # 蓝色 - 强烈卖出
+            tree.tag_configure('success', background='#e8f5e8', foreground='#2e7d32')
+            tree.tag_configure('error', background='#ffebee', foreground='#c62828')
+            
+            # 插入数据并设置颜色
             for index, row in df.iterrows():
-                tree.insert('', 'end', values=list(row))
+                values = list(row)
+                
+                # 格式化股票代码为6位完整格式
+                if '股票代码' in df.columns:
+                    stock_code_index = df.columns.get_loc('股票代码')
+                    original_code = str(values[stock_code_index])
+                    if original_code.isdigit():
+                        values[stock_code_index] = original_code.zfill(6)  # 补齐到6位
+                
+                # 确定行的颜色标签
+                tag = ''
+                if '建议' in df.columns:
+                    recommendation = str(row['建议']).strip()
+                    # 注意：要先检查更具体的匹配，再检查一般的匹配
+                    if "强烈买入" in recommendation:
+                        tag = 'strong_buy'
+                    elif "少量买入" in recommendation:  # 先检查少量买入
+                        tag = 'weak_buy'
+                    elif "买入" in recommendation:     # 再检查一般买入
+                        tag = 'buy'
+                    elif "强烈卖出" in recommendation:
+                        tag = 'strong_sell'
+                    elif "少量卖出" in recommendation:
+                        tag = 'weak_sell'
+                    elif "卖出" in recommendation:
+                        tag = 'sell'
+                    elif "观望" in recommendation or "持有" in recommendation:
+                        tag = 'hold'
+                
+                # 插入行数据
+                item_id = tree.insert('', 'end', values=values, tags=(tag,))
+                        
+                # 设置预测状态的图标
+                if '预测状态' in df.columns:
+                    status = str(row['预测状态']).strip()
+                    if status == '成功':
+                        tree.set(item_id, '预测状态', f"✅ {status}")
+                    elif status == '失败':
+                        tree.set(item_id, '预测状态', f"❌ {status}")
+                    else:
+                        tree.set(item_id, '预测状态', f"⚠️ {status}")
             
             # 添加滚动条
             v_scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
@@ -4446,15 +4534,15 @@ class KronosPredictor:
         try:
             # 根据5级建议类型设置颜色和图标
             if action == "强烈买入":
-                bg_color = "#d4edda"  # 深绿色背景
-                fg_color = "#155724"  # 深绿色文字
+                bg_color = "#ffebee"  # 浅红色背景
+                fg_color = "#c62828"  # 红色文字
                 icon = "🚀"
                 action_display = "强烈买入"
                 detail_reason = "技术面极好，建议积极买入"
             elif action == "少买":
-                bg_color = "#d1ecf1"  # 浅绿色背景
-                fg_color = "#0c5460"  # 深蓝绿文字
-                icon = "�"
+                bg_color = "#fff8e1"  # 浅黄色背景
+                fg_color = "#f57f17"  # 黄色文字
+                icon = "📈"
                 action_display = "少量买入"
                 detail_reason = "技术面偏好，建议小仓位买入"
             elif action == "观望":
@@ -4464,14 +4552,14 @@ class KronosPredictor:
                 action_display = "观望等待"
                 detail_reason = "技术面不明确，建议等待机会"
             elif action == "少卖":
-                bg_color = "#fff3cd"  # 浅黄色背景
-                fg_color = "#856404"  # 深黄色文字
+                bg_color = "#e8f5e8"  # 浅绿色背景
+                fg_color = "#2e7d32"  # 绿色文字
                 icon = "📉"
                 action_display = "少量卖出"
                 detail_reason = "技术面偏差，建议小仓位减持"
             elif action == "强烈卖出":
-                bg_color = "#f8d7da"  # 深红色背景
-                fg_color = "#721c24"  # 深红色文字
+                bg_color = "#e3f2fd"  # 浅蓝色背景
+                fg_color = "#1976d2"  # 蓝色文字
                 icon = "⚠️"
                 action_display = "强烈卖出"
                 detail_reason = "技术面极差，建议积极减仓"
