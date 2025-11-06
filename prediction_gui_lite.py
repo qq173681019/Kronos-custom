@@ -3623,7 +3623,7 @@ class KronosPredictor:
             # 创建CSV批量分析窗口
             csv_window = tk.Toplevel(self.root)
             csv_window.title("CSV批量股票分析工具")
-            csv_window.geometry("600x500")
+            csv_window.geometry("650x700")
             csv_window.resizable(True, True)
             
             # 主容器
