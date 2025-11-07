@@ -183,6 +183,11 @@ class KronosPredictor:
                                font=('Arial', 9), fg='#666666')
         version_label.pack()
         
+        # 数据源状态显示
+        self.data_source_label = tk.Label(title_frame, text="📊 数据源: AkShare + yfinance备用", 
+                                         font=('Arial', 8), fg='#0066CC')
+        self.data_source_label.pack()
+        
         # 分隔线
         separator = tk.Frame(title_frame, height=2, bg='#E0E0E0')
         separator.pack(fill=tk.X, pady=(5, 0))
@@ -477,12 +482,31 @@ class KronosPredictor:
         
         # 初始日志
         self.log_message("Kronos股票预测系统已启动")
+        
+        # 检查数据源可用性
+        available_sources = []
         if AKSHARE_AVAILABLE:
-            self.log_message("✅ 已启用真实数据模式 (AkShare)")
-            self.log_message("📡 将从服务器获取真实股票数据")
+            available_sources.append("AkShare")
+        
+        try:
+            import yfinance
+            available_sources.append("yfinance")
+        except ImportError:
+            pass
+        
+        if available_sources:
+            sources_text = " + ".join(available_sources)
+            self.log_message(f"✅ 数据源: {sources_text}")
+            self.log_message("📡 多数据源备用机制已启用")
+            
+            if "AkShare" in available_sources:
+                self.log_message("🎯 主要数据源: AkShare (A股专用)")
+            if "yfinance" in available_sources:
+                self.log_message("🌐 备用数据源: yfinance (全球市场)")
         else:
-            self.log_message("⚠️ 模拟数据模式")
-            self.log_message("💡 使用高质量模拟数据进行演示")
+            self.log_message("⚠️ 无可用数据源")
+            self.log_message("💡 请安装: pip install akshare yfinance")
+            
         self.log_message("请输入股票代码并选择图表类型")
     
     def log_message(self, message):
@@ -791,13 +815,80 @@ class KronosPredictor:
         }
     
     def get_stock_data_simple(self, code, chart_type, hist_days, pred_days):
-        """获取真实股票数据，如果失败则返回None"""
+        """获取真实股票数据，支持多数据源备用 - 增强稳定性版本"""
+        self.log_message(f"🎯 开始获取 {code} 的数据...")
+        
+        data_sources = []
+        
+        # 构建数据源尝试列表
         if AKSHARE_AVAILABLE:
-            self.log_message(f"🔍 使用真实数据模式获取 {code} 的数据")
-            return self.get_real_stock_data(code, chart_type, hist_days, pred_days)
-        else:
-            self.log_message(f"❌ AkShare库不可用，无法获取真实数据")
-            return None, None
+            data_sources.append(("AkShare", self.try_akshare_data))
+        
+        # yfinance作为备用，总是可用
+        data_sources.append(("yfinance", self.try_yfinance_data))
+        
+        # 按顺序尝试每个数据源
+        for source_name, get_data_func in data_sources:
+            try:
+                self.log_message(f"🔍 尝试 {source_name} 数据源...")
+                self.update_data_source_status(source_name, "trying")
+                
+                result = get_data_func(code, chart_type, hist_days, pred_days)
+                
+                if result and result[0] is not None and len(result[0]) > 0:
+                    self.log_message(f"✅ {source_name} 成功获取 {len(result[0])} 条数据")
+                    status_type = "primary" if source_name == "AkShare" else "backup"
+                    self.update_data_source_status(source_name, status_type)
+                    return result
+                else:
+                    self.log_message(f"⚠️ {source_name} 返回空数据，尝试下一个数据源...")
+                    
+            except Exception as e:
+                error_msg = str(e)
+                self.log_message(f"❌ {source_name} 失败: {error_msg}")
+                
+                # 如果是股票代码问题，不要继续尝试其他数据源
+                if any(keyword in error_msg.lower() for keyword in ['symbol', 'code', '代码', 'invalid']):
+                    self.log_message(f"🚫 检测到股票代码问题，停止尝试其他数据源")
+                    break
+                
+                continue
+        
+        # 所有数据源都失败
+        self.log_message(f"❌ 所有数据源都无法获取 {code} 的数据")
+        self.log_message("💡 建议检查：1)股票代码是否正确 2)网络连接 3)股票是否已退市")
+        self.update_data_source_status("无可用", "error")
+        return None, None
+    
+    def try_akshare_data(self, code, chart_type, hist_days, pred_days):
+        """尝试使用AkShare获取数据"""
+        return self.get_real_stock_data(code, chart_type, hist_days, pred_days)
+    
+    def try_yfinance_data(self, code, chart_type, hist_days, pred_days):
+        """尝试使用yfinance获取数据"""
+        return self.get_yfinance_data(code, chart_type, hist_days, pred_days)
+    
+    def update_data_source_status(self, source, status_type):
+        """更新数据源状态显示"""
+        if hasattr(self, 'data_source_label'):
+            if status_type == "primary":
+                text = f"📊 当前数据源: {source} (主要)"
+                color = '#0066CC'
+            elif status_type == "backup":
+                text = f"🔄 当前数据源: {source} (备用)"
+                color = '#FF8800'
+            elif status_type == "trying":
+                text = f"🔍 正在尝试: {source}..."
+                color = '#9966CC'
+            elif status_type == "error":
+                text = f"❌ 数据源状态: {source}"
+                color = '#CC0000'
+            else:
+                text = f"📊 数据源: {source}"
+                color = '#666666'
+            
+            self.data_source_label.config(text=text, fg=color)
+            self.root.update()
     
     def test_network_connectivity(self):
         """测试网络连接性和诊断问题"""
@@ -1082,6 +1173,175 @@ class KronosPredictor:
                     self.log_message(f"⏳ 等待重试中...")
         
         return None, None
+    
+    def get_yfinance_data(self, code, chart_type, hist_days, pred_days):
+        """使用yfinance获取股票数据作为备用数据源 - 增强版"""
+        try:
+            import yfinance as yf
+            
+            # 尝试多种代码格式
+            symbols_to_try = self.generate_symbol_variants(code)
+            self.log_message(f"📈 将尝试以下格式: {', '.join(symbols_to_try)}")
+            
+            for symbol in symbols_to_try:
+                try:
+                    # 设置参数
+                    if chart_type == "daily":
+                        interval = '1d'
+                        period = '1y'  # 获取一年数据
+                    elif chart_type == "5min":
+                        interval = '5m'
+                        period = '60d'  # 5分钟数据最多60天
+                    else:
+                        interval = '15m'  
+                        period = '60d'
+                        
+                    self.log_message(f"🔍 尝试获取 {symbol} 的数据...")
+                    
+                    # 获取数据
+                    ticker = yf.Ticker(symbol)
+                    data = ticker.history(period=period, interval=interval)
+                    
+                    if not data.empty and len(data) >= 5:  # 至少需要5条数据
+                        self.log_message(f"✅ {symbol} 成功获取 {len(data)} 条数据")
+                        
+                        # 转换为标准格式
+                        data.reset_index(inplace=True)
+                        
+                        # 重命名列
+                        column_mapping = {
+                            'Date': 'timestamps',
+                            'Datetime': 'timestamps', 
+                            'Open': 'open',
+                            'High': 'high',
+                            'Low': 'low',
+                            'Close': 'close',
+                            'Volume': 'volume'
+                        }
+                        
+                        for old_name, new_name in column_mapping.items():
+                            if old_name in data.columns:
+                                data = data.rename(columns={old_name: new_name})
+                        
+                        # 确保timestamps列存在
+                        if 'timestamps' not in data.columns:
+                            if 'Date' in data.columns:
+                                data['timestamps'] = data['Date']
+                            elif 'Datetime' in data.columns:
+                                data['timestamps'] = data['Datetime']
+                            else:
+                                # 使用索引作为时间戳
+                                data['timestamps'] = data.index
+                        
+                        # 确保timestamps是datetime类型
+                        data['timestamps'] = pd.to_datetime(data['timestamps'])
+                        
+                        # 验证数据质量
+                        if self.validate_stock_data(data):
+                            # 处理数据并返回
+                            return self.process_stock_data(data, chart_type, hist_days, pred_days)
+                        else:
+                            self.log_message(f"⚠️ {symbol} 数据质量不达标，尝试下一个格式...")
+                            continue
+                    else:
+                        self.log_message(f"⚠️ {symbol} 数据不足({len(data)}条)，尝试下一个格式...")
+                        continue
+                        
+                except Exception as e:
+                    self.log_message(f"⚠️ {symbol} 获取失败: {str(e)}")
+                    continue
+            
+            # 所有格式都失败
+            raise Exception(f"所有yfinance格式都无法获取 {code} 的有效数据")
+            
+        except ImportError:
+            raise Exception("yfinance库未安装，请运行: pip install yfinance")
+        except Exception as e:
+            raise Exception(f"yfinance获取数据失败: {str(e)}")
+    
+    def generate_symbol_variants(self, code):
+        """生成多种可能的股票代码格式"""
+        variants = []
+        
+        # 如果已经包含后缀，直接使用并生成变体
+        if '.' in code:
+            variants.append(code)
+            # 也尝试不带后缀的版本
+            base_code = code.split('.')[0]
+            variants.extend(self.generate_symbol_variants(base_code))
+            return list(dict.fromkeys(variants))  # 去重
+            
+        # A股代码处理
+        if len(code) == 6 and code.isdigit():
+            if code.startswith('6'):
+                # 上海证券交易所
+                variants.extend([f"{code}.SS", f"{code}.SH"])
+            elif code.startswith(('0', '3')):
+                # 深圳证券交易所  
+                variants.extend([f"{code}.SZ", f"{code}.SS"])
+            elif code.startswith('4'):
+                # 北京证券交易所
+                variants.extend([f"{code}.BJ", f"{code}.SS", f"{code}.SZ"])
+        
+        # 港股代码处理
+        elif len(code) <= 5 and code.isdigit():
+            # 港股代码通常是1-5位数字
+            padded_code = code.zfill(4)
+            variants.extend([f"{padded_code}.HK", f"{code}.HK"])
+        
+        # 美股等其他市场，直接使用原代码
+        else:
+            variants.append(code)
+        
+        # 如果以上都不匹配，添加一些通用尝试
+        if not variants:
+            variants = [code, f"{code}.SS", f"{code}.SZ", f"{code}.HK"]
+        
+        return variants
+    
+    def validate_stock_data(self, data):
+        """验证股票数据的质量"""
+        if data is None or data.empty:
+            return False
+        
+        # 检查必要的列
+        required_columns = ['close', 'timestamps']
+        for col in required_columns:
+            if col not in data.columns:
+                return False
+        
+        # 检查数据量
+        if len(data) < 3:
+            return False
+        
+        # 检查价格数据的有效性
+        if data['close'].isna().all() or (data['close'] <= 0).all():
+            return False
+        
+        return True
+    
+    def convert_code_to_yfinance(self, code):
+        """转换股票代码为yfinance格式"""
+        # 如果已经包含后缀，直接返回
+        if '.' in code:
+            return code
+            
+        # A股代码转换
+        if len(code) == 6 and code.isdigit():
+            if code.startswith('6'):
+                return f"{code}.SS"  # 上海证券交易所
+            elif code.startswith(('0', '3')):
+                return f"{code}.SZ"  # 深圳证券交易所
+            elif code.startswith('4'):
+                return f"{code}.BJ"  # 北京证券交易所
+        
+        # 港股代码处理
+        if len(code) <= 5 and code.isdigit():
+            # 港股代码通常是1-5位数字
+            return f"{code.zfill(4)}.HK"
+        
+        # 美股等其他市场，直接返回原代码
+        return code
     
     def process_stock_data(self, stock_data, chart_type, hist_days, pred_days):
         """处理股票数据"""

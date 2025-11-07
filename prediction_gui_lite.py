@@ -791,13 +791,26 @@ class KronosPredictor:
         }
     
     def get_stock_data_simple(self, code, chart_type, hist_days, pred_days):
-        """获取真实股票数据，如果失败则返回None"""
+        """获取真实股票数据，支持多数据源备用"""
+        # 首先尝试AkShare
         if AKSHARE_AVAILABLE:
-            self.log_message(f"🔍 使用真实数据模式获取 {code} 的数据")
-            return self.get_real_stock_data(code, chart_type, hist_days, pred_days)
-        else:
-            self.log_message(f"❌ AkShare库不可用，无法获取真实数据")
-            return None, None
+            try:
+                self.log_message(f"🔍 使用AkShare获取 {code} 的数据")
+                return self.get_real_stock_data(code, chart_type, hist_days, pred_days)
+            except Exception as e:
+                self.log_message(f"❌ AkShare获取失败: {str(e)}")
+                self.log_message("🔄 尝试备用数据源...")
+        
+        # 备用方案：使用yfinance
+        try:
+            self.log_message(f"🌐 使用yfinance备用数据源获取 {code} 的数据")
+            return self.get_yfinance_data(code, chart_type, hist_days, pred_days)
+        except Exception as e:
+            self.log_message(f"❌ yfinance也获取失败: {str(e)}")
+        
+        # 所有数据源都失败
+        self.log_message(f"❌ 所有数据源都无法获取 {code} 的数据")
+        return None, None
     
     def test_network_connectivity(self):
         """测试网络连接性和诊断问题"""
@@ -1082,6 +1095,97 @@ class KronosPredictor:
                     self.log_message(f"⏳ 等待重试中...")
         
         return None, None
+    
+    def get_yfinance_data(self, code, chart_type, hist_days, pred_days):
+        """使用yfinance获取股票数据作为备用数据源"""
+        try:
+            import yfinance as yf
+            
+            # 转换股票代码格式
+            symbol = self.convert_code_to_yfinance(code)
+            self.log_message(f"📈 转换代码: {code} → {symbol}")
+            
+            # 设置参数
+            if chart_type == "daily":
+                interval = '1d'
+                period = '1y'  # 获取一年数据
+            elif chart_type == "5min":
+                interval = '5m'
+                period = '60d'  # 5分钟数据最多60天
+            else:
+                interval = '15m'  
+                period = '60d'
+                
+            # 获取数据
+            ticker = yf.Ticker(symbol)
+            data = ticker.history(period=period, interval=interval)
+            
+            if data.empty:
+                raise Exception(f"yfinance未能获取到 {code} ({symbol}) 的数据")
+            
+            self.log_message(f"✅ yfinance成功获取 {len(data)} 条原始数据")
+            
+            # 转换为标准格式
+            data.reset_index(inplace=True)
+            
+            # 重命名列
+            column_mapping = {
+                'Date': 'timestamps',
+                'Datetime': 'timestamps', 
+                'Open': 'open',
+                'High': 'high',
+                'Low': 'low',
+                'Close': 'close',
+                'Volume': 'volume'
+            }
+            
+            for old_name, new_name in column_mapping.items():
+                if old_name in data.columns:
+                    data = data.rename(columns={old_name: new_name})
+            
+            # 确保timestamps列存在
+            if 'timestamps' not in data.columns:
+                if 'Date' in data.columns:
+                    data['timestamps'] = data['Date']
+                elif 'Datetime' in data.columns:
+                    data['timestamps'] = data['Datetime']
+                else:
+                    # 使用索引作为时间戳
+                    data['timestamps'] = data.index
+            
+            # 确保timestamps是datetime类型
+            data['timestamps'] = pd.to_datetime(data['timestamps'])
+            
+            # 处理数据并返回
+            return self.process_stock_data(data, chart_type, hist_days, pred_days)
+            
+        except ImportError:
+            raise Exception("yfinance库未安装，请运行: pip install yfinance")
+        except Exception as e:
+            raise Exception(f"yfinance获取数据失败: {str(e)}")
+    
+    def convert_code_to_yfinance(self, code):
+        """转换股票代码为yfinance格式"""
+        # 如果已经包含后缀，直接返回
+        if '.' in code:
+            return code
+            
+        # A股代码转换
+        if len(code) == 6 and code.isdigit():
+            if code.startswith('6'):
+                return f"{code}.SS"  # 上海证券交易所
+            elif code.startswith(('0', '3')):
+                return f"{code}.SZ"  # 深圳证券交易所
+            elif code.startswith('4'):
+                return f"{code}.BJ"  # 北京证券交易所
+        
+        # 港股代码处理
+        if len(code) <= 5 and code.isdigit():
+            # 港股代码通常是1-5位数字
+            return f"{code.zfill(4)}.HK"
+        
+        # 美股等其他市场，直接返回原代码
+        return code
     
     def process_stock_data(self, stock_data, chart_type, hist_days, pred_days):
         """处理股票数据"""
