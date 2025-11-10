@@ -9,10 +9,16 @@ import sys
 import os
 import locale
 
-# 设置编码处理
+# 设置编码处理 - 增强版
 if sys.platform.startswith('win'):
     # Windows系统编码处理
     try:
+        # 强制设置UTF-8编码
+        import codecs
+        sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+        sys.stderr = codecs.getwriter("utf-8")(sys.stderr.detach())
+        sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
+        
         # 设置控制台编码为UTF-8
         if hasattr(sys.stdout, 'reconfigure'):
             sys.stdout.reconfigure(encoding='utf-8')
@@ -21,6 +27,7 @@ if sys.platform.startswith('win'):
         
         # 设置环境变量
         os.environ['PYTHONIOENCODING'] = 'utf-8'
+        os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
         
         # 尝试设置本地化
         try:
@@ -32,6 +39,12 @@ if sys.platform.startswith('win'):
                 pass  # 忽略locale设置错误
     except Exception as e:
         print(f"编码设置警告: {e}")
+        # 如果上面的方法失败，使用简单的方法
+        try:
+            os.environ['PYTHONIOENCODING'] = 'utf-8'
+            os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+        except:
+            pass
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog

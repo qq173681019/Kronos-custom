@@ -200,48 +200,173 @@ class BatchStockAnalyzer:
     
     def load_historical_data(self, stock_code, data_dir="data", timeframe="daily"):
         """
-        加载股票历史数据
+        在线获取股票历史数据（不使用本地缓存）
         
         Args:
             stock_code: str, 股票代码
-            data_dir: str, 数据目录
+            data_dir: str, 数据目录（保留参数以保持接口兼容性，但不使用）
             timeframe: str, 时间框架 ("daily", "15min", "5min")
             
         Returns:
             pd.DataFrame: 历史数据，如果失败返回None
         """
+        print(f"开始在线获取股票 {stock_code} 的历史数据...")
+        
+        # 首先尝试使用AkShare获取A股数据
+        akshare_df = self._try_akshare_data(stock_code, timeframe)
+        if akshare_df is not None:
+            return akshare_df
+        
+        # 如果AkShare失败，尝试使用yfinance
+        yfinance_df = self._try_yfinance_data(stock_code, timeframe)
+        if yfinance_df is not None:
+            return yfinance_df
+        
+        # 所有数据源都失败
+        print(f"❌ 无法从任何数据源获取股票 {stock_code} 的历史数据")
+        print(f"   请检查：1)网络连接 2)股票代码是否正确 3)股票是否已退市")
+        return None
+    
+    def _try_akshare_data(self, stock_code, timeframe):
+        """尝试使用AkShare获取数据"""
         try:
-            filename = f"{stock_code}_historical_{timeframe}.csv"
-            filepath = os.path.join(data_dir, filename)
+            import akshare as ak
+            print(f"  🔍 尝试使用 AkShare 获取 {stock_code} 的数据...")
             
-            if not os.path.exists(filepath):
-                print(f"警告: 未找到股票 {stock_code} 的历史数据文件: {filepath}")
+            # 计算日期范围
+            from datetime import datetime, timedelta
+            today = datetime.now()
+            
+            if timeframe == "daily":
+                start_date = (today - timedelta(days=365)).strftime('%Y%m%d')
+                end_date = today.strftime('%Y%m%d')
+                df = ak.stock_zh_a_hist(
+                    symbol=stock_code,
+                    period='daily',
+                    start_date=start_date,
+                    end_date=end_date,
+                    adjust=""
+                )
+            elif timeframe == "5min":
+                start_date = (today - timedelta(days=3)).strftime('%Y%m%d')
+                end_date = today.strftime('%Y%m%d')
+                df = ak.stock_zh_a_hist_min_em(
+                    symbol=stock_code,
+                    start_date=start_date + " 09:30:00",
+                    end_date=end_date + " 15:00:00",
+                    period='5',
+                    adjust=''
+                )
+            elif timeframe == "15min":
+                start_date = (today - timedelta(days=7)).strftime('%Y%m%d')
+                end_date = today.strftime('%Y%m%d')
+                df = ak.stock_zh_a_hist_min_em(
+                    symbol=stock_code,
+                    start_date=start_date + " 09:30:00",
+                    end_date=end_date + " 15:00:00",
+                    period='15',
+                    adjust=''
+                )
+            else:
                 return None
             
-            df = pd.read_csv(filepath, encoding='utf-8')
-            
-            # 检查必要的列
-            required_columns = ['open', 'high', 'low', 'close', 'volume']
-            missing_columns = [col for col in required_columns if col not in df.columns]
-            
-            if missing_columns:
-                print(f"警告: 股票 {stock_code} 的数据缺少必要列: {missing_columns}")
+            if df is None or df.empty:
+                print(f"  ⚠️ AkShare 返回空数据")
                 return None
             
-            # 处理时间戳
+            # 规范化列名
+            rename_map = {
+                '开盘': 'open',
+                '收盘': 'close', 
+                '最高': 'high',
+                '最低': 'low',
+                '成交量': 'volume',
+                '成交额': 'amount',
+                '日期': 'timestamps',
+                '时间': 'timestamps'
+            }
+            df = df.rename(columns=rename_map)
+            
+            # 处理时间列
             if 'timestamps' in df.columns:
                 df['timestamps'] = pd.to_datetime(df['timestamps'])
-                df = df.sort_values('timestamps')
+            else:
+                df['timestamps'] = df.index
             
-            # 添加amount列如果不存在
+            # 添加缺失的amount列
             if 'amount' not in df.columns and 'volume' in df.columns:
                 df['amount'] = df['volume'] * df[['open', 'high', 'low', 'close']].mean(axis=1)
             
-            print(f"成功加载股票 {stock_code} 的历史数据，共 {len(df)} 条记录")
+            print(f"  ✅ AkShare 成功获取 {len(df)} 条数据")
             return df
             
+        except ImportError:
+            print(f"  ⚠️ AkShare 未安装，跳过")
+            return None
         except Exception as e:
-            print(f"加载股票 {stock_code} 历史数据失败: {str(e)}")
+            print(f"  ❌ AkShare 获取失败: {str(e)}")
+            return None
+    
+    def _try_yfinance_data(self, stock_code, timeframe):
+        """尝试使用yfinance获取数据"""
+        try:
+            import yfinance as yf
+            print(f"  🔍 尝试使用 yfinance 获取 {stock_code} 的数据...")
+            
+            # 尝试常见市场后缀
+            variants = [f"{stock_code}.SS", f"{stock_code}.SZ", f"{stock_code}.HK", stock_code]
+            
+            for sym in variants:
+                try:
+                    if timeframe == 'daily':
+                        data = yf.download(sym, period='1y', interval='1d', progress=False)
+                    elif timeframe == '15min':
+                        data = yf.download(sym, period='60d', interval='15m', progress=False)
+                    elif timeframe == '5min':
+                        data = yf.download(sym, period='60d', interval='5m', progress=False)
+                    else:
+                        data = yf.download(sym, period='1y', interval='1d', progress=False)
+
+                    if data is not None and (not data.empty) and len(data) >= 5:
+                        # 规范化列名和数据格式
+                        data = data.reset_index()
+                        col_map = {
+                            'Date': 'timestamps', 
+                            'Datetime': 'timestamps', 
+                            'Open': 'open', 
+                            'High': 'high', 
+                            'Low': 'low', 
+                            'Close': 'close', 
+                            'Volume': 'volume'
+                        }
+                        for old, new in col_map.items():
+                            if old in data.columns:
+                                data = data.rename(columns={old: new})
+
+                        if 'timestamps' not in data.columns:
+                            data['timestamps'] = data.index
+
+                        # 确保时间戳为datetime
+                        data['timestamps'] = pd.to_datetime(data['timestamps'])
+
+                        # 添加amount列
+                        if 'amount' not in data.columns and 'volume' in data.columns:
+                            data['amount'] = data['volume'] * data[['open', 'high', 'low', 'close']].mean(axis=1)
+
+                        print(f"  ✅ yfinance 成功获取 {sym} 的数据，共 {len(data)} 条")
+                        return data
+                        
+                except Exception:
+                    continue
+            
+            print(f"  ❌ yfinance 所有格式都无法获取数据")
+            return None
+            
+        except ImportError:
+            print(f"  ⚠️ yfinance 未安装，跳过")
+            return None
+        except Exception as e:
+            print(f"  ❌ yfinance 获取失败: {str(e)}")
             return None
     
     def predict_single_stock(self, stock_code, data_dir="data", timeframe="daily", pred_days=5):
@@ -259,7 +384,7 @@ class BatchStockAnalyzer:
         """
         print(f"\n开始分析股票: {stock_code}")
         
-        # 加载历史数据
+        # 在线获取历史数据
         df = self.load_historical_data(stock_code, data_dir, timeframe)
         if df is None:
             return {
@@ -268,7 +393,7 @@ class BatchStockAnalyzer:
                 'prediction_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'historical_data_points': 0,
                 'pred_days': pred_days,
-                'error': f'未找到股票 {stock_code} 的历史数据文件: data\\{stock_code}_historical_{timeframe}.csv'
+                'error': f'无法从网络获取股票 {stock_code} 的历史数据，请检查网络连接或股票代码是否正确'
             }
         
         results = {
