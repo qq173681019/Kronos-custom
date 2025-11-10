@@ -1,37 +1,37 @@
 # Core dependencies
 numpy>=1.21.0
 pandas>=2.0.0
-torch>=1.13.0
 
-# Deep learning and model dependencies
+# Deep learning and AI model dependencies
+torch>=1.13.0
 einops==0.8.1
 huggingface_hub==0.33.1
 safetensors==0.6.2
 tqdm==4.67.1
 
-# Data visualization and GUI
-matplotlib==3.9.3
-
-# GUI backend for matplotlib (choose one):
-# PySide6 is recommended. If you prefer PyQt6, replace PySide6 with PyQt6.
-PySide6
-
 # Machine learning
 scikit-learn>=1.0.0  # For RandomForestRegressor, LinearRegression, StandardScaler
 
-# Data fetching
-akshare>=1.11.0  # For real-time stock data
+# Data visualization and GUI
+matplotlib>=3.9.0
+# Note: tkinter is built-in with Python, no need to install separately
 
-# Network and SSL handling
+# Data fetching - Stock market data sources
+akshare>=1.11.0  # Primary data source for A-share/Chinese market
+yfinance>=0.2.0  # Backup data source for global markets
+
+# Network and HTTP handling
 urllib3>=1.26.0  # For secure network requests
-requests>=2.25.0  # For HTTP requests
+requests>=2.25.0  # For HTTP requests  
 certifi>=2021.5.30  # For SSL certificate verification
 
 # File and data processing
-openpyxl>=3.0.0  # For Excel file support
+openpyxl>=3.0.0  # For Excel file support (if needed)
 
-# Development and utilities
-pyinstaller>=5.0.0  # For building executables
+# Development and utilities (optional)
+pyinstaller>=5.0.0  # For building standalone executables
 
-# Note: tkinter and argparse are built-in modules, no need to install separately
-# Note: pathlib is built-in since Python 3.4, no need to install separately
+# Note about built-in modules:
+# The following are built-in Python modules and don't need to be installed:
+# tkinter, argparse, pathlib, datetime, threading, subprocess, json, 
+# locale, os, sys, warnings, codecs
