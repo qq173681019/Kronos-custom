@@ -31,6 +31,9 @@ openpyxl>=3.0.0  # For Excel file support (if needed)
 # Development and utilities (optional)
 pyinstaller>=5.0.0  # For building standalone executables
 
+# Additional data providers
+baostock>=1.3.5  # 可选：作为回退的数据源
+
 # Note about built-in modules:
 # The following are built-in Python modules and don't need to be installed:
 # tkinter, argparse, pathlib, datetime, threading, subprocess, json, 

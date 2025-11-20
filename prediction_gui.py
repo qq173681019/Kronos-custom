@@ -4119,15 +4119,42 @@ class KronosPredictor:
                         # 更新命令中的文件路径
                         cmd[2] = analysis_file
                     
-                    # 运行分析命令，显式设置编码
-                    result = subprocess.run(
+                    # 运行分析命令，显式设置编码，并实时捕获输出
+                    process = subprocess.Popen(
                         cmd, 
-                        capture_output=True, 
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
                         text=True, 
                         cwd=os.getcwd(),
                         encoding='utf-8',
-                        errors='replace'
+                        errors='replace',
+                        bufsize=1
                     )
+                    
+                    full_output = []
+                    
+                    # 实时读取输出
+                    while True:
+                        line = process.stdout.readline()
+                        if not line and process.poll() is not None:
+                            break
+                        if line:
+                            line = line.strip()
+                            full_output.append(line)
+                            # 在主线程更新日志
+                            self.root.after(0, lambda l=line: self.log_message(f"📊 {l}"))
+                    
+                    # 等待进程结束
+                    return_code = process.wait()
+                    
+                    # 构造类似subprocess.run的结果对象
+                    class ProcessResult:
+                        def __init__(self, rc, out, err):
+                            self.returncode = rc
+                            self.stdout = out
+                            self.stderr = err
+                            
+                    result = ProcessResult(return_code, "\n".join(full_output), "")
                     
                     # 清理临时文件
                     if temp_file and os.path.exists(temp_file):

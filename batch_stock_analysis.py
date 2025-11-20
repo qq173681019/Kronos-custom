@@ -9,6 +9,7 @@ import os
 import sys
 import pandas as pd
 import numpy as np
+import requests
 from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
@@ -221,6 +222,16 @@ class BatchStockAnalyzer:
         yfinance_df = self._try_yfinance_data(stock_code, timeframe)
         if yfinance_df is not None:
             return yfinance_df
+
+        # 如果yfinance失败，尝试腾讯接口
+        tencent_df = self._try_tencent_data(stock_code, timeframe)
+        if tencent_df is not None:
+            return tencent_df
+
+        # 最后尝试使用baostock
+        baostock_df = self._try_baostock_data(stock_code, timeframe)
+        if baostock_df is not None:
+            return baostock_df
         
         # 所有数据源都失败
         print(f"❌ 无法从任何数据源获取股票 {stock_code} 的历史数据")
@@ -367,6 +378,138 @@ class BatchStockAnalyzer:
             return None
         except Exception as e:
             print(f"  ❌ yfinance 获取失败: {str(e)}")
+            return None
+
+    def _try_tencent_data(self, stock_code, timeframe):
+        """尝试使用 Tencent 接口获取数据（尽力而为的回退方法）。
+        注意：腾讯对历史数据接口并不稳定，返回格式多变，这里做有限解析尝试。
+        如果无法获取或解析到足够数据，则返回None。
+        """
+        try:
+            print(f"  🔍 尝试使用 Tencent 接口获取 {stock_code} 的数据...")
+            # 尝试使用 gtimg 的 kline 接口（若可用）
+            # 先判断市场后缀：60/6 -> sh, 0/3/2 -> sz 作为常见规则
+            code = str(stock_code).zfill(6)
+            market = 'sh' if code.startswith('6') else 'sz'
+
+            # 该接口在不同环境下可能需要调整，这里使用常见的 web.ifzq.gtimg.cn 接口
+            # 示例: https://web.ifzq.gtimg.cn/appstock/app/kline/get?param=sh600036,day,2020-01-01,2025-11-20,640,qfq
+            today = datetime.now().strftime('%Y-%m-%d')
+            start = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+            url = f"https://web.ifzq.gtimg.cn/appstock/app/kline/get?param={market}{code},day,{start},{today},640,qfq"
+            resp = requests.get(url, timeout=8)
+            if resp.status_code != 200:
+                print(f"  ⚠️ Tencent 接口响应码非200: {resp.status_code}")
+                return None
+
+            j = resp.json()
+            if 'data' not in j or 'klines' not in j['data']:
+                print(f"  ⚠️ Tencent 返回格式不包含历史K线")
+                return None
+
+            klines = j['data']['klines']
+            if not klines:
+                print(f"  ⚠️ Tencent 返回空K线")
+                return None
+
+            rows = []
+            for item in klines:
+                # item 样例: '2025-11-19,10.0,10.5,9.8,10.2,12345,12400000'
+                parts = item.split(',')
+                if len(parts) < 6:
+                    continue
+                date = parts[0]
+                open_p = float(parts[1])
+                close_p = float(parts[4])
+                high_p = float(parts[2])
+                low_p = float(parts[3])
+                volume = float(parts[5])
+                rows.append({'timestamps': date, 'open': open_p, 'high': high_p, 'low': low_p, 'close': close_p, 'volume': volume})
+
+            if len(rows) < 5:
+                print(f"  ⚠️ Tencent 解析后数据不足: {len(rows)} 条")
+                return None
+
+            df = pd.DataFrame(rows)
+            df['timestamps'] = pd.to_datetime(df['timestamps'])
+            if 'amount' not in df.columns and 'volume' in df.columns:
+                df['amount'] = df['volume'] * df[['open','high','low','close']].mean(axis=1)
+
+            print(f"  ✅ Tencent 成功获取 {code} 的数据，共 {len(df)} 条")
+            return df
+
+        except Exception as e:
+            print(f"  ❌ Tencent 获取失败: {str(e)}")
+            return None
+
+    def _try_baostock_data(self, stock_code, timeframe):
+        """尝试使用 baostock 获取历史数据作为回退。
+        需要安装 `baostock` 包。返回 DataFrame 或 None。
+        """
+        try:
+            import baostock as bs
+            print(f"  🔍 尝试使用 baostock 获取 {stock_code} 的数据...")
+
+            code = str(stock_code).zfill(6)
+            # baostock 的代码格式示例：sh.600036 或 sz.000001
+            prefix = 'sh.' if code.startswith('6') else 'sz.'
+            bs_code = prefix + code
+
+            lg = bs.login()
+            if lg.error_code != '0':
+                print(f"  ⚠️ baostock 登录失败: {lg.error_msg}")
+                try:
+                    bs.logout()
+                except:
+                    pass
+                return None
+
+            # 查询过去一年的日线
+            start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            rs = bs.query_history_k_data_plus(bs_code,
+                                              "date,open,high,low,close,volume,turn",
+                                              start_date=start_date, end_date=end_date,
+                                              frequency="d", adjustflag="3")
+            if rs.error_code != '0':
+                print(f"  ⚠️ baostock 查询失败: {rs.error_msg}")
+                bs.logout()
+                return None
+
+            records = []
+            while (rs.next()):
+                row = rs.get_row_data()
+                # row: [date, open, high, low, close, volume, turn]
+                records.append(row)
+
+            bs.logout()
+
+            if not records:
+                print(f"  ⚠️ baostock 返回空数据")
+                return None
+
+            df = pd.DataFrame(records, columns=['timestamps','open','high','low','close','volume','turn'])
+            df['timestamps'] = pd.to_datetime(df['timestamps'])
+            df[['open','high','low','close','volume']] = df[['open','high','low','close','volume']].astype(float)
+            if 'amount' not in df.columns and 'volume' in df.columns:
+                df['amount'] = df['volume'] * df[['open','high','low','close']].mean(axis=1)
+
+            if len(df) < 5:
+                print(f"  ⚠️ baostock 返回数据不足: {len(df)} 条")
+                return None
+
+            print(f"  ✅ baostock 成功获取 {bs_code} 的数据，共 {len(df)} 条")
+            return df
+
+        except ImportError:
+            print(f"  ⚠️ baostock 未安装，跳过")
+            return None
+        except Exception as e:
+            print(f"  ❌ baostock 获取失败: {str(e)}")
+            try:
+                bs.logout()
+            except:
+                pass
             return None
     
     def predict_single_stock(self, stock_code, data_dir="data", timeframe="daily", pred_days=5):

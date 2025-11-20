@@ -1,0 +1,121 @@
+{
+  "stock_code": "000665",
+  "timeframe": "daily",
+  "prediction_date": "2025-11-20 13:42:47",
+  "historical_data_points": 244,
+  "pred_days": 5,
+  "multi_model": {
+    "technical": {
+      "prices": [
+        6.11,
+        6.11,
+        6.11,
+        6.11,
+        6.11
+      ],
+      "method": "technical_indicators",
+      "signals": {
+        "macd": -1,
+        "rsi": 0,
+        "ma": 1,
+        "bollinger": 0
+      }
+    },
+    "machine_learning": {
+      "prices": [
+        6.079200000000002,
+        6.078600000000002,
+        6.0752,
+        6.085399999999998,
+        6.1264
+      ],
+      "method": "machine_learning",
+      "model_type": "RandomForest"
+    },
+    "support_resistance": {
+      "prices": [
+        6.10509090909091,
+        6.100181818181819,
+        6.095272727272729,
+        6.090363636363638,
+        6.085454545454548
+      ],
+      "method": "support_resistance",
+      "support_levels": [
+        3.52,
+        3.75,
+        3.95,
+        4.04,
+        4.15
+      ],
+      "resistance_levels": [
+        7.72,
+        6.99,
+        6.86,
+        6.65,
+        6.64
+      ],
+      "next_support": 4.15,
+      "next_resistance": 6.64
+    },
+    "ensemble": {
+      "prices": [
+        6.096207272727274,
+        6.0944945454545465,
+        6.091661818181819,
+        6.094269090909091,
+        6.109196363636364
+      ],
+      "method": "ensemble",
+      "weights": {
+        "technical": 0.3,
+        "ml": 0.4,
+        "support_resistance": 0.3
+      }
+    },
+    "confidence": {
+      "overall_confidence": 0.9977589157674833,
+      "price_consistency": 0.9977589157674833,
+      "std_deviation": 0.013667474514899358
+    }
+  },
+  "summary": {
+    "current_price": 6.11,
+    "predicted_prices": [
+      6.096207272727274,
+      6.0944945454545465,
+      6.091661818181819,
+      6.094269090909091,
+      6.109196363636364
+    ],
+    "price_changes": [
+      -0.013792727272726069,
+      -0.015505454545453823,
+      -0.01833818181818092,
+      -0.015730909090909684,
+      -0.0008036363636358956
+    ],
+    "price_change_pcts": [
+      -0.22574021722955923,
+      -0.253771760154727,
+      -0.3001339086445322,
+      -0.257461687248931,
+      -0.013152804642158684
+    ],
+    "confidence": 0.9977589157674833
+  },
+  "trading_signal": {
+    "recommendation": "观望",
+    "confidence": "谨慎",
+    "score": -1,
+    "details": {
+      "kdj_score": 1,
+      "macd_score": -2,
+      "trend_score": 0,
+      "pred_trend": 0.21306839364205565,
+      "current_k": 32.15110799501804,
+      "current_d": 52.23828090535157,
+      "current_j": 0.0
+    }
+  }
+}

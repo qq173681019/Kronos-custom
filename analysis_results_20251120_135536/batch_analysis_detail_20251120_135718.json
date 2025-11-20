@@ -1,0 +1,154 @@
+{
+  "analysis_date": "2025-11-20 13:55:36",
+  "total_stocks": 18,
+  "successful_predictions": 0,
+  "failed_predictions": 18,
+  "timeframe": "daily",
+  "pred_days": 5,
+  "results": [
+    {
+      "stock_code": "000498",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:55:49",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 000498 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "600941",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:55:56",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 600941 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "002061",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:00",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 002061 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "002142",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:05",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 002142 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "000544",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:10",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 000544 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "601318",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:16",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 601318 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "000001",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:21",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 000001 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "002878",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:26",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 002878 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "000066",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:31",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 000066 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "002842",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:37",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 002842 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "000665",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:45",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 000665 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "002466",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:50",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 002466 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "002460",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:56:56",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 002460 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "601899",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:57:01",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 601899 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "600491",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:57:05",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 600491 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "000156",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:57:09",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 000156 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "002044",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:57:13",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 002044 的历史数据，请检查网络连接或股票代码是否正确"
+    },
+    {
+      "stock_code": "002198",
+      "timeframe": "daily",
+      "prediction_date": "2025-11-20 13:57:18",
+      "historical_data_points": 0,
+      "pred_days": 5,
+      "error": "无法从网络获取股票 002198 的历史数据，请检查网络连接或股票代码是否正确"
+    }
+  ]
+}
