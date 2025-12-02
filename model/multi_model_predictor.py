@@ -2,7 +2,24 @@
 # -*- coding: utf-8 -*-
 """
 多模型集成预测模块
+版本: v2.1.0
+更新日期: 2024-12-02
+
 实现技术指标、机器学习、支撑阻力位三种方法的短期预测
+
+算法架构:
+1. 技术指标预测 (30%权重): MACD, RSI, 移动平均线, 布林带
+2. 机器学习预测 (40%权重): Random Forest + 动态特征窗口
+3. 支撑阻力位预测 (30%权重): 关键价位识别与趋势分析
+
+版本更新:
+v2.1.0:
+- 支持多时间框架动态窗口调整
+- 5分钟预测: 12个时间点 (60分钟历史)
+- 15分钟预测: 8个时间点 (120分钟历史) 
+- 日线预测: 10个时间点 (10天历史)
+
+Copyright © 2024-2025 Kronos AI Team. All rights reserved.
 """
 
 import numpy as np
@@ -24,11 +41,12 @@ class MultiModelPredictor:
         self.weights = weights or {'technical': 0.3, 'ml': 0.4, 'support_resistance': 0.3}
         self.scaler = StandardScaler()
         
-    def predict_short_term(self, stock_data, pred_days=5):
+    def predict_short_term(self, stock_data, pred_days=5, timeframe='daily'):
         """
         短期预测主函数
         stock_data: DataFrame, 股票历史数据
         pred_days: int, 预测天数
+        timeframe: str, 时间框架 ('daily', '15min', '5min')
         返回: dict, 包含各模型预测结果和集成结果
         """
         results = {}
@@ -39,7 +57,7 @@ class MultiModelPredictor:
             results['technical'] = tech_pred
             
             # 方法2: 机器学习预测
-            ml_pred = self._machine_learning_prediction(stock_data, pred_days)
+            ml_pred = self._machine_learning_prediction(stock_data, pred_days, timeframe)
             results['machine_learning'] = ml_pred
             
             # 方法3: 支撑阻力位预测
@@ -151,13 +169,19 @@ class MultiModelPredictor:
             print(f"技术指标预测失败: {str(e)}")
             return self._simple_trend_prediction(data, pred_days)
     
-    def _machine_learning_prediction(self, data, pred_days):
+    def _machine_learning_prediction(self, data, pred_days, timeframe='daily'):
         """方法2: 机器学习预测"""
         try:
             # 准备特征
             features = []
             targets = []
-            window_size = 10  # 使用10天的数据作为特征
+            window_size = 10  # 使用10天的数据作为特征（对于分钟级数据则是10个时间点）
+            if timeframe == '5min':
+                window_size = 12  # 12个5分钟K线 = 60分钟历史数据
+            elif timeframe == '15min':
+                window_size = 8   # 8个15分钟K线 = 120分钟历史数据
+            else:
+                window_size = 10  # 10天的数据作为特征
             
             # 计算技术指标作为特征
             data = data.copy()

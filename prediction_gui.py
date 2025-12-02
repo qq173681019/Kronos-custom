@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Kronos股票预测GUI应用程序
-支持直接在程序中显示图表，集成多模型预测功能
+Kronos股票预测系统 GUI界面
+版本: v2.1.0
+更新日期: 2024-12-02
+新功能: 增强多数据源支持，优化5分钟预测算法
+
+主要改进:
+- 添加Tencent和Baostock数据源作为备用
+- 5分钟预测使用20天数据训练，60分钟特征窗口  
+- 实时日志输出，提升用户体验
+- 增强网络数据获取的稳定性
+
+Copyright © 2024-2025 Kronos AI Team. All rights reserved.
 """
 
 import sys
@@ -264,34 +274,15 @@ class KronosPredictor:
                                            fg='darkgreen', width=6)
         self.overlap_value_label.pack(side=tk.RIGHT, padx=(5, 0))
         
-        # 动态说明标签
-        self.note_label = tk.Label(tips_frame, text="📊 日线图：取前30日数据分析，显示25日历史，预测从第22日开始（3日重合+7日纯预测）", 
-                                  font=('Arial', 8), fg='blue', wraplength=300)
-        self.note_label.pack(anchor='w', padx=10, pady=2)
-        
         # 多次预测平均设置
-        multi_pred_frame = tk.Frame(tips_frame)
-        multi_pred_frame.pack(fill=tk.X, padx=10, pady=5)
-        
         self.use_multiple_predictions = tk.BooleanVar(value=True)
-        self.multi_pred_checkbox = tk.Checkbutton(multi_pred_frame, 
-                                                 text="启用5次预测平均（提高稳定性）",
-                                                 variable=self.use_multiple_predictions,
-                                                 font=('Arial', 9))
-        self.multi_pred_checkbox.pack(anchor='w')
-        
-        # 预测次数说明
-        multi_info_label = tk.Label(multi_pred_frame, 
-                                   text="🔄 多次预测可减少随机性，提供更稳定的结果", 
-                                   font=('Arial', 8), fg='green', wraplength=300)
-        multi_info_label.pack(anchor='w', pady=(2, 0))
         
         # 多模型集成预测设置
         ensemble_frame = tk.LabelFrame(control_panel, text="🤖 多模型集成预测", font=('Arial', 11, 'bold'))
         ensemble_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 启用多模型预测的主开关
-        self.use_ensemble_prediction = tk.BooleanVar(value=False)
+        self.use_ensemble_prediction = tk.BooleanVar(value=True)
         self.ensemble_main_checkbox = tk.Checkbutton(ensemble_frame, 
                                                     text="启用多模型集成预测（短期预测增强）",
                                                     variable=self.use_ensemble_prediction,
@@ -398,18 +389,6 @@ class KronosPredictor:
                                        bg='#4CAF50', fg='white',
                                        height=1)
         self.predict_button.pack(fill=tk.X, pady=(0, 3))
-        
-        # 保存图表按钮
-        self.save_button = tk.Button(button_frame, text="保存图表", 
-                                    command=self.save_chart,
-                                    font=('Arial', 9))
-        self.save_button.pack(fill=tk.X, pady=(0, 3))
-        
-        # 打开结果文件夹按钮
-        self.folder_button = tk.Button(button_frame, text="打开结果文件夹", 
-                                      command=self.open_results_folder,
-                                      font=('Arial', 9))
-        self.folder_button.pack(fill=tk.X, pady=(0, 3))
         
         # CSV批量分析按钮
         self.csv_batch_button = tk.Button(button_frame, text="📊 CSV批量分析", 
@@ -672,7 +651,7 @@ class KronosPredictor:
             else:
                 desc = f"📈 5分钟图：使用72小时数据分析，显示6小时+预测120分钟（{overlap_value}分钟重合验证）"
         
-        self.note_label.config(text=desc)
+        # 注：动态说明标签已删除，不再更新显示
     
     def on_chart_type_changed(self):
         """当图表类型改变时调整UI设置"""
@@ -3850,46 +3829,6 @@ class KronosPredictor:
             self.log_message(f"保存图表文件时出错: {str(e)}")
             return None
     
-    def save_chart(self):
-        """保存当前显示的图表"""
-        if not self.current_figure:
-            messagebox.showwarning("无图表", "请先运行预测生成图表")
-            return
-            
-        try:
-            file_path = filedialog.asksaveasfilename(
-                defaultextension=".png",
-                filetypes=[("PNG files", "*.png"), ("JPG files", "*.jpg"), ("PDF files", "*.pdf"), ("All files", "*.*")],
-                title="保存图表"
-            )
-            if file_path:
-                self.current_figure.savefig(file_path, dpi=300, bbox_inches='tight')
-                messagebox.showinfo("保存成功", f"图表已保存到：{file_path}")
-                self.log_message(f"图表已保存到: {file_path}")
-        except Exception as e:
-            messagebox.showerror("保存失败", f"无法保存图表：{str(e)}")
-            self.log_message(f"保存图表失败: {str(e)}")
-    
-    def open_results_folder(self):
-        """打开结果文件夹"""
-        try:
-            if self.last_prediction_files:
-                folder_path = os.path.dirname(self.last_prediction_files['historical'])
-                if os.path.exists(folder_path):
-                    os.startfile(folder_path)
-                    self.log_message(f"已打开结果文件夹: {folder_path}")
-                else:
-                    self.log_message("结果文件夹不存在")
-            else:
-                # 打开默认的data文件夹
-                if os.path.exists("data"):
-                    os.startfile("data")
-                    self.log_message("已打开data文件夹")
-                else:
-                    self.log_message("请先运行预测生成结果文件")
-        except Exception as e:
-            self.log_message(f"打开文件夹失败: {str(e)}")
-    
     def open_csv_batch_analyzer(self):
         """打开CSV批量分析对话框"""
         try:
@@ -4537,21 +4476,6 @@ class KronosPredictor:
             self.log_message(f"❌ 显示总结报告失败: {str(e)}")
             messagebox.showerror("错误", f"显示总结报告失败：{str(e)}")
 
-    def open_results_folder(self):
-        """打开结果文件夹"""
-        if not self.last_prediction_files:
-            messagebox.showwarning("无结果", "请先运行预测")
-            return
-            
-        try:
-            data_folder = os.path.abspath("data")
-            if os.name == 'nt':  # Windows
-                os.startfile(data_folder)
-            elif os.name == 'posix':  # macOS and Linux
-                subprocess.call(['open' if sys.platform == 'darwin' else 'xdg-open', data_folder])
-        except Exception as e:
-            messagebox.showerror("打开失败", f"无法打开文件夹：{str(e)}")
-    
     def run_prediction_thread(self):
         """在后台线程中运行预测"""
         try:

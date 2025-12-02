@@ -1,8 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-批量股票分析工具
-从CSV文件读取股票代码列表，批量进行股票预测分析并保存结果
+Kronos股票预测系统 - 批量股票分析模块
+版本: v2.1.0
+更新日期: 2024-12-02
+
+主要功能:
+- 支持批量股票预测分析
+- 多数据源自动切换 (AkShare -> yfinance -> Tencent -> Baostock)
+- 多时间框架预测 (日线/15分钟/5分钟)
+- 集成多种预测算法 (技术指标/机器学习/支撑阻力位)
+
+版本更新:
+v2.1.0:
+- 新增Baostock数据源支持
+- 5分钟预测优化: 20天训练数据 + 60分钟特征窗口
+- 增强网络连接稳定性
+- 实时预测进度反馈
+
+Copyright © 2024-2025 Kronos AI Team. All rights reserved.
 """
 
 import os
@@ -259,7 +275,7 @@ class BatchStockAnalyzer:
                     adjust=""
                 )
             elif timeframe == "5min":
-                start_date = (today - timedelta(days=3)).strftime('%Y%m%d')
+                start_date = (today - timedelta(days=20)).strftime('%Y%m%d')
                 end_date = today.strftime('%Y%m%d')
                 df = ak.stock_zh_a_hist_min_em(
                     symbol=stock_code,
@@ -549,7 +565,7 @@ class BatchStockAnalyzer:
         
         try:
             # 使用多模型预测器
-            multi_results = self.multi_predictor.predict_short_term(df, pred_days)
+            multi_results = self.multi_predictor.predict_short_term(df, pred_days, timeframe)
             results['multi_model'] = multi_results
             
             # 如果启用了Kronos模型

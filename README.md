@@ -1,5 +1,6 @@
 <div align="center">
-  <h2><b>Kronos: A Foundation Model for the Language of Financial Markets </b></h2>
+  <h2><b>Kronos: A Foundation Model for the Language of Financial Markets v2.1.0</b></h2>
+  <p><i>增强多数据源支持，优化5分钟预测算法 - 2024年12月更新</i></p>
 </div>
 
 
