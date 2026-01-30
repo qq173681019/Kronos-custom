@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^dir /B \"c:\\\\Users\\\\admin\\\\Documents\\\\GitHub\\\\Kronos-custom\\\\\\*\\.csv\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
