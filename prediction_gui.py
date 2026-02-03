@@ -125,11 +125,68 @@ VERSION = "2.0.1"
 VERSION_TYPE = "轻量版" if not __name__.endswith('_lite') else "轻量版"
 FULL_VERSION = f"v{VERSION} {VERSION_TYPE}"
 
+# ===== 设计系统颜色配置 =====
+COLOR_THEME = {
+    'red_primary': '#E42313',      # 品牌红色
+    'black_primary': '#0D0D0D',    # 主黑色
+    'gray_700': '#7A7A7A',         # 次级灰色
+    'gray_border': '#E8E8E8',      # 边框灰
+    'gray_400': '#B0B0B0',         # 浅灰
+    'bg_surface': '#FAFAFA',       # 浅色背景
+    'bg_white': '#FFFFFF',         # 纯白
+    'success_green': '#22C55E',    # 成功绿
+}
+
+# 暗色主题颜色配置
+COLOR_THEME_DARK = {
+    'red_primary': '#FF4444',      # 亮红色（暗色背景上）
+    'black_primary': '#FFFFFF',    # 白色文本
+    'gray_700': '#CCCCCC',         # 浅灰文本
+    'gray_border': '#444444',      # 深灰边框
+    'gray_400': '#666666',         # 中等灰
+    'bg_surface': '#2A2A2A',       # 深灰背景
+    'bg_white': '#1E1E1E',         # 深背景
+    'success_green': '#4CAF50',    # 成功绿
+}
+
+# 当前主题（Light/Dark）
+CURRENT_THEME = "dark"  # 使用暗色主题以改善可读性
+
+# 根据主题选择颜色
+COLOR_SCHEME = COLOR_THEME_DARK if CURRENT_THEME == "dark" else COLOR_THEME
+
+# 为了兼容现有代码，让 COLOR_THEME 动态指向当前主题
+class DynamicColorTheme(dict):
+    """动态颜色主题类，自动根据 CURRENT_THEME 选择颜色"""
+    def __getitem__(self, key):
+        theme = COLOR_THEME_DARK if CURRENT_THEME == "dark" else COLOR_THEME
+        return theme[key]
+    
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except (KeyError, TypeError):
+            return default
+
+# 替换 COLOR_THEME 为动态版本
+COLOR_THEME = DynamicColorTheme()
+
+# 字体配置 - 增大字体以提高可读性
+FONT_FAMILY = {
+    'heading': ('Segoe UI', 12, 'bold'),      # 标题字体（从14改为12，更紧凑）
+    'title': ('Segoe UI', 28, 'bold'),        # 大标题（从24改为28）
+    'label': ('Segoe UI', 11, 'bold'),        # 标签（从10改为11）
+    'normal': ('Segoe UI', 11, 'bold'),       # 常规（从10改为11，加粗）
+    'small': ('Segoe UI', 10, 'bold'),        # 小字体（从9改为10，加粗）
+    'mono': ('Consolas', 10, 'bold'),         # 等宽字体（从9改为10，加粗）
+}
+
 class KronosPredictor:
     def __init__(self, root):
         self.root = root
         self.root.title(f"Kronos股票预测系统 {FULL_VERSION}")
         self.root.geometry("1600x1200")
+        self.root.configure(bg=COLOR_THEME['bg_white'])
         
         # 禁用所有可能的确认对话框
         import matplotlib
@@ -174,89 +231,114 @@ class KronosPredictor:
     def setup_ui(self):
         """设置用户界面"""
         # 创建主容器
-        main_container = tk.Frame(self.root)
-        main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        main_container = tk.Frame(self.root, bg=COLOR_THEME['bg_white'])
+        main_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
         
         # 左侧控制面板
-        control_panel = tk.Frame(main_container, width=350)
-        control_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        control_panel = tk.Frame(main_container, width=380, bg=COLOR_THEME['bg_white'], relief=tk.SOLID, borderwidth=0)
+        control_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 0))
         control_panel.pack_propagate(False)
         
         # 右侧图表显示区域
-        self.chart_frame = tk.Frame(main_container, bg='white', relief=tk.SUNKEN, borderwidth=2)
+        self.chart_frame = tk.Frame(main_container, bg=COLOR_THEME['bg_white'], relief=tk.SOLID, borderwidth=1)
         self.chart_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
         # 在图表区域显示提示文本
         self.chart_label = tk.Label(self.chart_frame, text="运行预测后图表将显示在这里", 
-                                   font=('Arial', 14), bg='white', fg='gray')
+                                   font=FONT_FAMILY['normal'], bg=COLOR_THEME['bg_white'], fg=COLOR_THEME['gray_700'])
         self.chart_label.pack(expand=True)
         
         # === 控制面板内容 ===
         # 版本信息和标题
-        title_frame = tk.Frame(control_panel)
-        title_frame.pack(fill=tk.X, pady=(0, 15))
+        title_frame = tk.Frame(control_panel, bg=COLOR_THEME['bg_white'])
+        title_frame.pack(fill=tk.X, pady=(20, 15), padx=20)
         
         # 主标题
-        title_label = tk.Label(title_frame, text="Kronos股票预测系统", 
-                              font=('Arial', 14, 'bold'), fg='#2E86AB')
+        title_label = tk.Label(title_frame, text="Kronos", 
+                              font=FONT_FAMILY['title'], fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'])
         title_label.pack()
+        
+        # 副标题
+        subtitle_label = tk.Label(title_frame, text="股票预测系统",
+                                 font=('Segoe UI', 12), fg=COLOR_THEME['gray_700'], bg=COLOR_THEME['bg_white'])
+        subtitle_label.pack()
         
         # 版本信息
         version_label = tk.Label(title_frame, text=f"{FULL_VERSION} | KDJ+ATR+MACD技术分析", 
-                               font=('Arial', 9), fg='#666666')
+                               font=FONT_FAMILY['small'], fg=COLOR_THEME['gray_700'], bg=COLOR_THEME['bg_white'])
         version_label.pack()
         
         # 数据源状态显示
         self.data_source_label = tk.Label(title_frame, text="📊 数据源: AkShare + yfinance备用", 
-                                         font=('Arial', 8), fg='#0066CC')
+                                         font=FONT_FAMILY['small'], fg='#0066CC', bg=COLOR_THEME['bg_white'])
         self.data_source_label.pack()
         
         # 分隔线
-        separator = tk.Frame(title_frame, height=2, bg='#E0E0E0')
-        separator.pack(fill=tk.X, pady=(5, 0))
+        separator = tk.Frame(title_frame, height=2, bg=COLOR_THEME['gray_border'])
+        separator.pack(fill=tk.X, pady=(10, 0))
         
         # 股票代码输入
-        stock_frame = tk.LabelFrame(control_panel, text="股票代码", font=('Arial', 10, 'bold'))
-        stock_frame.pack(fill=tk.X, pady=(10, 10))
+        stock_frame = tk.LabelFrame(control_panel, text="股票代码", font=FONT_FAMILY['label'], 
+                                   fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'], 
+                                   relief=tk.FLAT, borderwidth=0, padx=10, pady=10)
+        stock_frame.pack(fill=tk.X, pady=(10, 10), padx=20)
         
         self.stock_code = tk.StringVar(value="688981")
-        tk.Entry(stock_frame, textvariable=self.stock_code, font=('Arial', 12)).pack(pady=5, padx=10, fill=tk.X)
+        stock_entry = tk.Entry(stock_frame, textvariable=self.stock_code, font=FONT_FAMILY['normal'],
+                              bg=COLOR_THEME['bg_surface'], fg=COLOR_THEME['black_primary'],
+                              relief=tk.FLAT, borderwidth=1, insertbackground=COLOR_THEME['red_primary'])
+        stock_entry.pack(pady=5, padx=0, fill=tk.X)
         
         # 图表类型选择
-        chart_frame = tk.LabelFrame(control_panel, text="图表类型", font=('Arial', 10, 'bold'))
-        chart_frame.pack(fill=tk.X, pady=(0, 10))
+        chart_frame = tk.LabelFrame(control_panel, text="图表类型", font=FONT_FAMILY['label'],
+                                   fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'],
+                                   relief=tk.FLAT, borderwidth=0, padx=10, pady=10)
+        chart_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
         
         self.chart_type = tk.StringVar(value="daily")
-        tk.Radiobutton(chart_frame, text="日线图", variable=self.chart_type, value="daily", 
-                      font=('Arial', 10), command=self.on_chart_type_changed).pack(anchor='w', padx=10)
-        tk.Radiobutton(chart_frame, text="5分钟图", variable=self.chart_type, value="5min", 
-                      font=('Arial', 10), command=self.on_chart_type_changed).pack(anchor='w', padx=10)
+        daily_radio = tk.Radiobutton(chart_frame, text="日线图", variable=self.chart_type, value="daily",
+                                    font=FONT_FAMILY['normal'], fg=COLOR_THEME['black_primary'], 
+                                    bg=COLOR_THEME['bg_white'], selectcolor=COLOR_THEME['bg_surface'],
+                                    command=self.on_chart_type_changed, activebackground=COLOR_THEME['bg_surface'],
+                                    activeforeground=COLOR_THEME['black_primary'])
+        daily_radio.pack(anchor='w', padx=0)
+        
+        fmin_radio = tk.Radiobutton(chart_frame, text="5分钟图", variable=self.chart_type, value="5min",
+                                   font=FONT_FAMILY['normal'], fg=COLOR_THEME['gray_700'],
+                                   bg=COLOR_THEME['bg_white'], selectcolor=COLOR_THEME['bg_surface'],
+                                   command=self.on_chart_type_changed, activebackground=COLOR_THEME['bg_surface'],
+                                   activeforeground=COLOR_THEME['black_primary'])
+        fmin_radio.pack(anchor='w', padx=0)
         
         # 时间范围设置
         # 小字提示替代预测设置
-        tips_frame = tk.Frame(control_panel)
-        tips_frame.pack(fill=tk.X, pady=(0, 10))
+        tips_frame = tk.Frame(control_panel, bg=COLOR_THEME['bg_surface'], relief=tk.FLAT, borderwidth=0)
+        tips_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
         
         # 添加提示文字
         tip_text = "💡 系统自动优化：日线图使用40日分析/20日显示，5分钟图使用72小时分析/6小时显示"
         self.tips_label = tk.Label(tips_frame, text=tip_text, 
-                                  font=('Arial', 8), fg='#666666', 
-                                  wraplength=280, justify='left')
-        self.tips_label.pack(anchor='w', padx=10, pady=5)
+                                  font=FONT_FAMILY['small'], fg=COLOR_THEME['gray_700'], 
+                                  wraplength=280, justify='left', bg=COLOR_THEME['bg_surface'])
+        self.tips_label.pack(anchor='w', padx=8, pady=8)
         
         # 重合验证设置（独立框架）
-        overlap_main_frame = tk.LabelFrame(control_panel, text="重合验证设置", font=('Arial', 10, 'bold'))
-        overlap_main_frame.pack(fill=tk.X, pady=(0, 10))
+        overlap_main_frame = tk.LabelFrame(control_panel, text="重合验证设置", font=FONT_FAMILY['label'],
+                                          fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'],
+                                          relief=tk.FLAT, borderwidth=0, padx=10, pady=10)
+        overlap_main_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
         
-        overlap_frame = tk.Frame(overlap_main_frame)
-        overlap_frame.pack(fill=tk.X, padx=10, pady=5)
+        overlap_frame = tk.Frame(overlap_main_frame, bg=COLOR_THEME['bg_white'])
+        overlap_frame.pack(fill=tk.X, padx=0, pady=0)
         
-        self.overlap_title_label = tk.Label(overlap_frame, text="重合天数 (日线图):")
+        self.overlap_title_label = tk.Label(overlap_frame, text="重合天数 (日线图):", 
+                                           font=FONT_FAMILY['small'], fg=COLOR_THEME['black_primary'],
+                                           bg=COLOR_THEME['bg_white'])
         self.overlap_title_label.pack(anchor='w')
         
         # 滑动条和数值显示的容器
-        slider_container = tk.Frame(overlap_frame)
-        slider_container.pack(fill=tk.X, pady=2)
+        slider_container = tk.Frame(overlap_frame, bg=COLOR_THEME['bg_white'])
+        slider_container.pack(fill=tk.X, pady=4)
         
         # 重合验证滑动条（调整范围为0-4，默认值为1）
         self.overlap_days = tk.IntVar(value=1)  # 默认值改为1天
@@ -265,208 +347,250 @@ class KronosPredictor:
                                      orient=tk.HORIZONTAL,
                                      variable=self.overlap_days,
                                      command=self.update_overlap_label,
-                                     length=200)
+                                     length=200, bg=COLOR_THEME['bg_surface'],
+                                     fg=COLOR_THEME['black_primary'], troughcolor=COLOR_THEME['gray_border'],
+                                     highlightthickness=0, borderwidth=0, relief=tk.FLAT)
         self.overlap_scale.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
         # 显示当前数值（动态单位）
         self.overlap_value_label = tk.Label(slider_container, text="1天", 
-                                           font=('Arial', 9, 'bold'), 
-                                           fg='darkgreen', width=6)
-        self.overlap_value_label.pack(side=tk.RIGHT, padx=(5, 0))
+                                           font=('Segoe UI', 9, 'bold'), 
+                                           fg=COLOR_THEME['red_primary'], width=6, bg=COLOR_THEME['bg_white'])
+        self.overlap_value_label.pack(side=tk.RIGHT, padx=(8, 0))
         
         # 多次预测平均设置
         self.use_multiple_predictions = tk.BooleanVar(value=True)
         
         # 多模型集成预测设置
-        ensemble_frame = tk.LabelFrame(control_panel, text="🤖 多模型集成预测", font=('Arial', 11, 'bold'))
-        ensemble_frame.pack(fill=tk.X, pady=(0, 10))
+        ensemble_frame = tk.LabelFrame(control_panel, text="🤖 多模型集成预测", font=FONT_FAMILY['heading'],
+                                      fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'],
+                                      relief=tk.FLAT, borderwidth=0, padx=10, pady=10)
+        ensemble_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
         
         # 启用多模型预测的主开关
         self.use_ensemble_prediction = tk.BooleanVar(value=True)
         self.ensemble_main_checkbox = tk.Checkbutton(ensemble_frame, 
                                                     text="启用多模型集成预测（短期预测增强）",
                                                     variable=self.use_ensemble_prediction,
-                                                    font=('Arial', 10, 'bold'),
-                                                    fg='darkblue',
+                                                    font=('Segoe UI', 10),
+                                                    fg=COLOR_THEME['black_primary'],
+                                                    bg=COLOR_THEME['bg_white'],
+                                                    selectcolor=COLOR_THEME['bg_surface'],
+                                                    activebackground=COLOR_THEME['bg_white'],
+                                                    activeforeground=COLOR_THEME['black_primary'],
                                                     command=self.toggle_ensemble_options)
-        self.ensemble_main_checkbox.pack(anchor='w', padx=10, pady=5)
+        self.ensemble_main_checkbox.pack(anchor='w', padx=0, pady=5)
         
         # 模型权重设置框架（初始时禁用）
-        self.ensemble_options_frame = tk.Frame(ensemble_frame)
-        self.ensemble_options_frame.pack(fill=tk.X, padx=20, pady=5)
+        self.ensemble_options_frame = tk.Frame(ensemble_frame, bg=COLOR_THEME['bg_white'])
+        self.ensemble_options_frame.pack(fill=tk.X, padx=0, pady=5)
         
         # 权重设置说明
         weight_info_label = tk.Label(self.ensemble_options_frame, 
-                                    text="📊 各模型权重（总和=100%）：", 
-                                    font=('Arial', 10), fg='blue')
+                                    text="📊 权重分配：", 
+                                    font=FONT_FAMILY['label'], fg=COLOR_THEME['black_primary'],
+                                    bg=COLOR_THEME['bg_white'])
         weight_info_label.pack(anchor='w')
         
         # 紧凑型权重设置框架
-        weights_main_frame = tk.Frame(self.ensemble_options_frame)
+        weights_main_frame = tk.Frame(self.ensemble_options_frame, bg=COLOR_THEME['bg_white'])
         weights_main_frame.pack(fill=tk.X, pady=3)
         
         # 技术指标权重（左侧）
-        tech_weight_frame = tk.Frame(weights_main_frame)
+        tech_weight_frame = tk.Frame(weights_main_frame, bg=COLOR_THEME['bg_white'])
         tech_weight_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        tk.Label(tech_weight_frame, text="技术:", font=('Arial', 9)).pack()
+        tk.Label(tech_weight_frame, text="技术", font=FONT_FAMILY['small'], 
+                fg=COLOR_THEME['gray_700'], bg=COLOR_THEME['bg_white']).pack()
         self.tech_weight = tk.IntVar(value=30)
         self.tech_scale = tk.Scale(tech_weight_frame, from_=0, to=100, orient=tk.HORIZONTAL,
-                                  variable=self.tech_weight, length=100,
-                                  command=lambda v: self.update_weight_display('tech'))
+                                  variable=self.tech_weight, length=60,
+                                  command=lambda v: self.update_weight_display('tech'),
+                                  bg=COLOR_THEME['bg_surface'], fg=COLOR_THEME['black_primary'],
+                                  troughcolor=COLOR_THEME['gray_border'], highlightthickness=0,
+                                  borderwidth=0, relief=tk.FLAT)
         self.tech_scale.pack()
-        self.tech_weight_label = tk.Label(tech_weight_frame, text="30%", font=('Arial', 9))
+        self.tech_weight_label = tk.Label(tech_weight_frame, text="30%", font=FONT_FAMILY['small'],
+                                         fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'])
         self.tech_weight_label.pack()
         
         # 机器学习权重（中间）
-        ml_weight_frame = tk.Frame(weights_main_frame)
+        ml_weight_frame = tk.Frame(weights_main_frame, bg=COLOR_THEME['bg_white'])
         ml_weight_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        tk.Label(ml_weight_frame, text="机器学习:", font=('Arial', 9)).pack()
+        tk.Label(ml_weight_frame, text="机器学习", font=FONT_FAMILY['small'],
+                fg=COLOR_THEME['gray_700'], bg=COLOR_THEME['bg_white']).pack()
         self.ml_weight = tk.IntVar(value=40)
         self.ml_scale = tk.Scale(ml_weight_frame, from_=0, to=100, orient=tk.HORIZONTAL,
-                                variable=self.ml_weight, length=100,
-                                command=lambda v: self.update_weight_display('ml'))
+                                variable=self.ml_weight, length=60,
+                                command=lambda v: self.update_weight_display('ml'),
+                                bg=COLOR_THEME['bg_surface'], fg=COLOR_THEME['black_primary'],
+                                troughcolor=COLOR_THEME['gray_border'], highlightthickness=0,
+                                borderwidth=0, relief=tk.FLAT)
         self.ml_scale.pack()
-        self.ml_weight_label = tk.Label(ml_weight_frame, text="40%", font=('Arial', 9))
+        self.ml_weight_label = tk.Label(ml_weight_frame, text="40%", font=FONT_FAMILY['small'],
+                                       fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'])
         self.ml_weight_label.pack()
         
         # 支撑阻力位权重（右侧）
-        sr_weight_frame = tk.Frame(weights_main_frame)
+        sr_weight_frame = tk.Frame(weights_main_frame, bg=COLOR_THEME['bg_white'])
         sr_weight_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        tk.Label(sr_weight_frame, text="支撑阻力:", font=('Arial', 9)).pack()
+        tk.Label(sr_weight_frame, text="支撑阻力", font=FONT_FAMILY['small'],
+                fg=COLOR_THEME['gray_700'], bg=COLOR_THEME['bg_white']).pack()
         self.sr_weight = tk.IntVar(value=30)
         self.sr_scale = tk.Scale(sr_weight_frame, from_=0, to=100, orient=tk.HORIZONTAL,
-                                variable=self.sr_weight, length=100,
-                                command=lambda v: self.update_weight_display('sr'))
+                                variable=self.sr_weight, length=60,
+                                command=lambda v: self.update_weight_display('sr'),
+                                bg=COLOR_THEME['bg_surface'], fg=COLOR_THEME['black_primary'],
+                                troughcolor=COLOR_THEME['gray_border'], highlightthickness=0,
+                                borderwidth=0, relief=tk.FLAT)
         self.sr_scale.pack()
-        self.sr_weight_label = tk.Label(sr_weight_frame, text="30%", font=('Arial', 9))
+        self.sr_weight_label = tk.Label(sr_weight_frame, text="30%", font=FONT_FAMILY['small'],
+                                       fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'])
         self.sr_weight_label.pack()
         
         # 权重总和显示（紧凑型）
-        weight_sum_frame = tk.Frame(self.ensemble_options_frame)
+        weight_sum_frame = tk.Frame(self.ensemble_options_frame, bg=COLOR_THEME['bg_white'])
         weight_sum_frame.pack(fill=tk.X, pady=2)
-        tk.Label(weight_sum_frame, text="总和:", font=('Arial', 9, 'bold')).pack(side=tk.LEFT)
+        tk.Label(weight_sum_frame, text="总和:", font=('Segoe UI', 9, 'bold'),
+                fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white']).pack(side=tk.LEFT)
         self.weight_sum_label = tk.Label(weight_sum_frame, text="100%", 
-                                        font=('Arial', 9, 'bold'), fg='green')
+                                        font=('Segoe UI', 9, 'bold'), fg=COLOR_THEME['success_green'],
+                                        bg=COLOR_THEME['bg_white'])
         self.weight_sum_label.pack(side=tk.LEFT, padx=5)
         
         # 集成权重设置
-        ensemble_weight_frame = tk.Frame(self.ensemble_options_frame)
+        ensemble_weight_frame = tk.Frame(self.ensemble_options_frame, bg=COLOR_THEME['bg_white'])
         ensemble_weight_frame.pack(fill=tk.X, pady=5)
-        tk.Label(ensemble_weight_frame, text="与Kronos算法混合比例:", font=('Arial', 10, 'bold')).pack(anchor='w')
+        tk.Label(ensemble_weight_frame, text="混合比例:", font=FONT_FAMILY['label'], 
+                fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white']).pack(anchor='w')
         
-        mix_frame = tk.Frame(ensemble_weight_frame)
+        mix_frame = tk.Frame(ensemble_weight_frame, bg=COLOR_THEME['bg_white'])
         mix_frame.pack(fill=tk.X, pady=2)
-        tk.Label(mix_frame, text="多模型:", font=('Arial', 9)).pack(side=tk.LEFT)
+        tk.Label(mix_frame, text="多模型", font=FONT_FAMILY['normal'],
+                fg=COLOR_THEME['gray_700'], bg=COLOR_THEME['bg_white']).pack(side=tk.LEFT)
         self.ensemble_mix_weight = tk.IntVar(value=50)
         self.ensemble_mix_scale = tk.Scale(mix_frame, from_=0, to=100, orient=tk.HORIZONTAL,
-                                          variable=self.ensemble_mix_weight, length=180,
-                                          command=self.update_mix_weight_display)
+                                          variable=self.ensemble_mix_weight, length=120,
+                                          command=self.update_mix_weight_display,
+                                          bg=COLOR_THEME['bg_surface'], fg=COLOR_THEME['black_primary'],
+                                          troughcolor=COLOR_THEME['gray_border'], highlightthickness=0,
+                                          borderwidth=0, relief=tk.FLAT)
         self.ensemble_mix_scale.pack(side=tk.LEFT, padx=5)
-        self.ensemble_mix_label = tk.Label(mix_frame, text="50%", font=('Arial', 9), width=4)
+        self.ensemble_mix_label = tk.Label(mix_frame, text="50%", font=FONT_FAMILY['normal'], width=4,
+                                          fg=COLOR_THEME['red_primary'], bg=COLOR_THEME['bg_white'])
         self.ensemble_mix_label.pack(side=tk.LEFT)
         
-        self.kronos_mix_label = tk.Label(ensemble_weight_frame, text="🔮 Kronos算法: 50%", 
-                                        font=('Arial', 9), fg='green')
+        self.kronos_mix_label = tk.Label(ensemble_weight_frame, text="🔮 Kronos: 50%", 
+                                        font=FONT_FAMILY['normal'], fg=COLOR_THEME['success_green'],
+                                        bg=COLOR_THEME['bg_white'])
         self.kronos_mix_label.pack(anchor='w')
         
         # 多模型预测说明（压缩版）
         ensemble_info_label = tk.Label(self.ensemble_options_frame, 
-                                      text="💡 结合技术分析、机器学习和支撑阻力位的综合预测", 
-                                      font=('Arial', 9), fg='purple', wraplength=350)
+                                      text="💡 综合技术/ML/支撑阻力位预测", 
+                                      font=FONT_FAMILY['small'], fg=COLOR_THEME['red_primary'],
+                                      bg=COLOR_THEME['bg_white'], wraplength=350)
         ensemble_info_label.pack(anchor='w', pady=(3, 0))
         
         # 初始状态禁用选项
         self.toggle_ensemble_options()
         
         # 按钮区域
-        button_frame = tk.Frame(control_panel)
-        button_frame.pack(fill=tk.X, pady=(5, 0))
+        button_frame = tk.Frame(control_panel, bg=COLOR_THEME['bg_white'])
+        button_frame.pack(fill=tk.X, pady=(5, 0), padx=20)
         
-        # 运行预测按钮
+        # 运行预测按钮 - 红色主CTA
         self.predict_button = tk.Button(button_frame, text="运行预测", 
                                        command=self.run_prediction, 
-                                       font=('Arial', 11, 'bold'),
-                                       bg='#4CAF50', fg='white',
-                                       height=1)
-        self.predict_button.pack(fill=tk.X, pady=(0, 3))
+                                       font=('Segoe UI', 12, 'bold'),
+                                       bg=COLOR_THEME['red_primary'], fg=COLOR_THEME['bg_white'],
+                                       activebackground='#C71C0A', activeforeground=COLOR_THEME['bg_white'],
+                                       relief=tk.FLAT, borderwidth=0, height=2, cursor='hand2')
+        self.predict_button.pack(fill=tk.X, pady=(0, 8))
         
         # CSV批量分析按钮
         self.csv_batch_button = tk.Button(button_frame, text="📊 CSV批量分析", 
                                          command=self.open_csv_batch_analyzer,
-                                         font=('Arial', 10, 'bold'),
-                                         bg='#FF9800', fg='white',
-                                         height=1)
-        self.csv_batch_button.pack(fill=tk.X, pady=(0, 5))
+                                         font=FONT_FAMILY['normal'],
+                                         bg=COLOR_THEME['black_primary'], fg=COLOR_THEME['bg_white'],
+                                         activebackground='#333333', activeforeground=COLOR_THEME['bg_white'],
+                                         relief=tk.FLAT, borderwidth=0, height=1, cursor='hand2')
+        self.csv_batch_button.pack(fill=tk.X, pady=(0, 8))
         
         # 进度条
-        self.progress = ttk.Progressbar(control_panel, mode='indeterminate')
-        self.progress.pack(fill=tk.X, pady=(0, 5))
+        self.progress = ttk.Progressbar(control_panel, mode='indeterminate', length=300)
+        self.progress.pack(fill=tk.X, pady=(0, 8), padx=20)
         
         # 交易建议显示区域
         advice_frame = tk.LabelFrame(control_panel, text="💡 智能交易建议", 
-                                   font=('Arial', 10, 'bold'), 
-                                   fg='#2c3e50',
-                                   relief=tk.RAISED, borderwidth=2)
-        advice_frame.pack(fill=tk.X, pady=(0, 5))
+                                   font=FONT_FAMILY['label'],
+                                   fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'],
+                                   relief=tk.FLAT, borderwidth=0, padx=10, pady=10)
+        advice_frame.pack(fill=tk.X, pady=(0, 8), padx=20)
         
         # 交易建议内容框架
-        advice_content = tk.Frame(advice_frame)
-        advice_content.pack(fill=tk.X, padx=5, pady=5)
+        advice_content = tk.Frame(advice_frame, bg=COLOR_THEME['bg_white'])
+        advice_content.pack(fill=tk.X, padx=0, pady=0)
         
         # 建议结果显示
         self.advice_result_frame = tk.Frame(advice_content, 
-                                          bg='#f8f9fa', 
-                                          relief=tk.SOLID, 
-                                          borderwidth=2)
+                                          bg=COLOR_THEME['bg_surface'], 
+                                          relief=tk.FLAT, 
+                                          borderwidth=0)
         self.advice_result_frame.pack(fill=tk.X, pady=(0, 8))
         
         # 建议标题
         self.advice_title = tk.Label(self.advice_result_frame, 
                                    text="⏳ 等待预测数据...", 
-                                   font=('Arial', 13, 'bold'),
-                                   bg='#f8f9fa', fg='#666666')
+                                   font=('Segoe UI', 12, 'bold'),
+                                   bg=COLOR_THEME['bg_surface'], fg=COLOR_THEME['gray_700'])
         self.advice_title.pack(pady=8)
         
         # 建议详情
         self.advice_detail = tk.Label(self.advice_result_frame, 
                                     text="运行预测后将显示智能交易建议",
-                                    font=('Arial', 10),
-                                    bg='#f8f9fa', fg='#888888',
-                                    wraplength=300, justify=tk.CENTER)
+                                    font=FONT_FAMILY['normal'],
+                                    bg=COLOR_THEME['bg_surface'], fg=COLOR_THEME['gray_700'],
+                                    wraplength=280, justify=tk.CENTER)
         self.advice_detail.pack(pady=(0, 8))
         
         # 快速操作按钮框架
-        quick_action_frame = tk.Frame(advice_content)
+        quick_action_frame = tk.Frame(advice_content, bg=COLOR_THEME['bg_white'])
         quick_action_frame.pack(fill=tk.X)
         
         # 刷新建议按钮
         self.refresh_advice_btn = tk.Button(quick_action_frame, text="🔄 刷新", 
                                           command=self.refresh_quick_advice,
-                                          font=('Arial', 9, 'bold'),
-                                          bg='#17a2b8', fg='white',
-                                          relief=tk.RAISED,
-                                          state='disabled')
-        self.refresh_advice_btn.pack(side=tk.LEFT, padx=(0, 8), fill=tk.X, expand=True)
+                                          font=FONT_FAMILY['normal'],
+                                          bg=COLOR_THEME['gray_border'], fg=COLOR_THEME['black_primary'],
+                                          relief=tk.FLAT, borderwidth=0,
+                                          state='disabled', cursor='hand2')
+        self.refresh_advice_btn.pack(side=tk.LEFT, padx=(0, 6), fill=tk.X, expand=True)
         
         # 详细分析按钮
         self.detail_advice_btn = tk.Button(quick_action_frame, text="📊 详细分析", 
                                          command=self.show_detailed_analysis,
-                                         font=('Arial', 9, 'bold'),
-                                         bg='#28a745', fg='white',
-                                         relief=tk.RAISED,
-                                         state='disabled')
+                                         font=FONT_FAMILY['normal'],
+                                         bg=COLOR_THEME['success_green'], fg=COLOR_THEME['bg_white'],
+                                         relief=tk.FLAT, borderwidth=0,
+                                         state='disabled', cursor='hand2',
+                                         activebackground='#1BA84D', activeforeground=COLOR_THEME['bg_white'])
         self.detail_advice_btn.pack(side=tk.RIGHT, fill=tk.X, expand=True)
         
         # 状态日志
-        log_frame = tk.LabelFrame(control_panel, text="状态日志", font=('Arial', 10, 'bold'))
-        log_frame.pack(fill=tk.BOTH, expand=True)
+        log_frame = tk.LabelFrame(control_panel, text="状态日志", font=FONT_FAMILY['label'],
+                                 fg=COLOR_THEME['black_primary'], bg=COLOR_THEME['bg_white'],
+                                 relief=tk.FLAT, borderwidth=0, padx=10, pady=10)
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
         
         # 创建日志文本框和滚动条
-        log_container = tk.Frame(log_frame)
-        log_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        log_container = tk.Frame(log_frame, bg=COLOR_THEME['bg_white'])
+        log_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
         
-        self.log_text = tk.Text(log_container, height=8, font=('Consolas', 9))
-        scrollbar = tk.Scrollbar(log_container, orient=tk.VERTICAL, command=self.log_text.yview)
+        self.log_text = tk.Text(log_container, height=8, font=FONT_FAMILY['mono'],
+                               bg=COLOR_THEME['bg_surface'], fg=COLOR_THEME['black_primary'],
+                               relief=tk.FLAT, borderwidth=0, insertbackground=COLOR_THEME['red_primary'])
+        scrollbar = tk.Scrollbar(log_container, orient=tk.VERTICAL, command=self.log_text.yview,
+                                bg=COLOR_THEME['bg_surface'], troughcolor=COLOR_THEME['bg_white'])
         self.log_text.configure(yscrollcommand=scrollbar.set)
         
         self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -481,9 +605,10 @@ class KronosPredictor:
             available_sources.append("AkShare")
         
         try:
-            import yfinance
+            import yfinance as yf
             available_sources.append("yfinance")
-        except ImportError:
+        except (ImportError, TypeError) as e:
+            # 忽略ImportError和TypeError（Python 3.8兼容性问题）
             pass
         
         if available_sources:
@@ -807,7 +932,7 @@ class KronosPredictor:
         }
     
     def get_stock_data_simple(self, code, chart_type, hist_days, pred_days):
-        """获取真实股票数据，支持多数据源备用 - 增强稳定性版本"""
+        """获取真实股票数据，支持多数据源备用和本地缓存后备 - 增强稳定性版本"""
         self.log_message(f"🎯 开始获取 {code} 的数据...")
         
         data_sources = []
@@ -846,11 +971,74 @@ class KronosPredictor:
                 
                 continue
         
-        # 所有数据源都失败
-        self.log_message(f"❌ 所有数据源都无法获取 {code} 的数据")
+        # 所有网络数据源都失败，尝试从本地缓存加载
+        self.log_message(f"❌ 所有网络数据源都无法获取 {code} 的数据")
+        self.log_message(f"🔄 尝试从本地缓存加载 {code} 的数据...")
+        
+        cached_result = self.try_load_cached_data(code, chart_type)
+        if cached_result and cached_result[0] is not None and len(cached_result[0]) > 0:
+            self.log_message(f"✅ 成功从本地缓存加载 {len(cached_result[0])} 条数据")
+            self.update_data_source_status("本地缓存", "cached")
+            return cached_result
+        
+        # 本地缓存也没有
+        self.log_message(f"❌ 本地缓存中也没有 {code} 的数据")
         self.log_message("💡 建议检查：1)股票代码是否正确 2)网络连接 3)股票是否已退市")
         self.update_data_source_status("无可用", "error")
         return None, None
+    
+    def try_load_cached_data(self, code, chart_type):
+        """从本地缓存CSV文件加载数据，如果没有预测数据则自动生成"""
+        try:
+            hist_file = f"data/{code}_historical_{chart_type}.csv"
+            pred_file = f"data/{code}_prediction_{chart_type}.csv"
+            
+            # 检查文件是否存在
+            import os
+            if not os.path.exists(hist_file):
+                self.log_message(f"⚠️ 历史数据缓存文件不存在: {hist_file}")
+                return None
+            
+            # 读取历史数据
+            historical_data = pd.read_csv(hist_file)
+            self.log_message(f"📂 加载历史数据: {hist_file} ({len(historical_data)}行)")
+            
+            # 检查预测数据是否存在
+            if os.path.exists(pred_file):
+                prediction_data = pd.read_csv(pred_file)
+                self.log_message(f"📂 加载预测数据: {pred_file} ({len(prediction_data)}行)")
+            else:
+                # 预测数据不存在，自动生成
+                self.log_message(f"🔮 预测数据缓存不存在，自动生成预测...")
+                
+                # 根据图表类型确定预测天数
+                if chart_type == "daily":
+                    pred_days = 7
+                else:  # 5min
+                    pred_days = 8
+                
+                try:
+                    # 生成预测数据
+                    prediction_data = self.generate_prediction_data(historical_data, pred_days, chart_type)
+                    
+                    if prediction_data is not None and len(prediction_data) > 0:
+                        # 保存预测数据到缓存
+                        prediction_data.to_csv(pred_file, index=False, encoding='utf-8-sig')
+                        self.log_message(f"💾 预测数据已生成并保存: {pred_file} ({len(prediction_data)}行)")
+                    else:
+                        self.log_message(f"❌ 预测数据生成失败")
+                        return None
+                        
+                except Exception as e:
+                    self.log_message(f"❌ 预测生成出错: {str(e)}")
+                    return None
+            
+            return historical_data, prediction_data
+            
+        except Exception as e:
+            self.log_message(f"❌ 从缓存加载失败: {str(e)}")
+            return None
+    
     
     def try_akshare_data(self, code, chart_type, hist_days, pred_days):
         """尝试使用AkShare获取数据"""
@@ -872,6 +1060,9 @@ class KronosPredictor:
             elif status_type == "trying":
                 text = f"🔍 正在尝试: {source}..."
                 color = '#9966CC'
+            elif status_type == "cached":
+                text = f"💾 当前数据源: {source} (本地缓存)"
+                color = '#22C55E'
             elif status_type == "error":
                 text = f"❌ 数据源状态: {source}"
                 color = '#CC0000'

@@ -1,6 +1,0 @@
-@echo off
-chcp 65001 >nul
-set PYTHONIOENCODING=utf-8
-set PYTHONUTF8=1
-python prediction_gui_lite.py
-pause
