@@ -1086,6 +1086,62 @@ class BatchStockAnalyzer:
                 'score': 0,
                 'error': str(e)
             }
+    
+    def export_mobile_json(self, stock_code, timeframe='daily', pred_days=5):
+        """
+        导出移动端优化的JSON格式
+        专为触摸屏设备设计的扁平化数据结构
+        
+        Returns:
+            dict: 移动端JSON格式的预测结果
+        """
+        # 获取原始预测结果
+        raw_prediction = self.predict_single_stock(stock_code, timeframe=timeframe, pred_days=pred_days)
+        
+        # 检查错误
+        if 'error' in raw_prediction:
+            return {
+                'status': 'error',
+                'message': raw_prediction['error'],
+                'code': stock_code,
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        # 提取关键信息
+        summary = raw_prediction.get('summary', {})
+        signal = raw_prediction.get('trading_signal', {})
+        
+        base_price = summary.get('current_price', 0)
+        forecast_prices = summary.get('predicted_prices', [])
+        pct_changes = summary.get('price_change_pcts', [])
+        
+        # 构建移动端数据结构
+        mobile_data = {
+            'status': 'success',
+            'timestamp': datetime.now().isoformat(),
+            'stock_code': stock_code,
+            'timeframe': timeframe,
+            'current_price': round(base_price, 2),
+            'predictions': [],
+            'recommendation': {
+                'action': signal.get('recommendation', '持有'),
+                'confidence': signal.get('confidence', '中'),
+                'score': signal.get('score', 0)
+            },
+            'model_confidence': round(summary.get('confidence', 0.5) * 100, 1),
+            'data_points': raw_prediction.get('historical_data_points', 0)
+        }
+        
+        # 填充预测数据
+        for i, (price, pct) in enumerate(zip(forecast_prices, pct_changes)):
+            mobile_data['predictions'].append({
+                'period': i + 1,
+                'price': round(price, 2),
+                'change': round(price - base_price, 2),
+                'change_percent': round(pct, 2)
+            })
+        
+        return mobile_data
 
 
 def main():

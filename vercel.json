@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "public": true,
+  "github": {
+    "silent": true
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/mobile_reports/index.html" },
+    { "source": "/(.*)", "destination": "/mobile_reports/$1" }
+  ]
+}
