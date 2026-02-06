@@ -82,6 +82,29 @@ We release a family of pre-trained models with varying capacities to suit differ
 | Kronos-large | [Kronos-Tokenizer-base](https://huggingface.co/NeoQuasar/Kronos-Tokenizer-base) | 512            | 499.2M | ❌                                                                         |
 
 
+## 📱 Mobile Web Interface (NEW!)
+
+Kronos now supports mobile-optimized web interface for deployment on Vercel or any static hosting platform.
+
+### Quick Start for Mobile
+
+```bash
+# Generate mobile-friendly HTML reports
+python generate_mobile_reports.py
+
+# Open in browser
+open mobile_reports/index.html
+```
+
+**Features:**
+- 📱 Fully responsive mobile design
+- ⚡ Fast static HTML generation
+- 🎨 Beautiful gradient UI
+- 📊 Pre-calculated predictions
+- 🚀 Deploy to Vercel in minutes
+
+See [MOBILE_DEPLOYMENT.md](MOBILE_DEPLOYMENT.md) for detailed deployment instructions.
+
 ## 🚀 Getting Started
 
 ### Installation

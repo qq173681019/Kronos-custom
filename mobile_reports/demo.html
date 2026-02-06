@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Kronos移动端预测演示</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            color: #333;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .main-container {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        
+        .top-bar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .stock-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .stock-button {
+            background: white;
+            border: none;
+            border-radius: 15px;
+            padding: 18px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #667eea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .stock-button:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stock-button.selected {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .prediction-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            margin-bottom: 15px;
+        }
+        
+        .price-display {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .current-label {
+            font-size: 14px;
+            color: #95a5a6;
+            margin-bottom: 8px;
+        }
+        
+        .current-value {
+            font-size: 42px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .currency {
+            font-size: 20px;
+            color: #7f8c8d;
+        }
+        
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .forecast-item {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .forecast-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+        
+        .forecast-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .forecast-change {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .positive { color: #27ae60; }
+        .negative { color: #e74c3c; }
+        
+        .info-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .footer-note {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 400px) {
+            .current-value { font-size: 36px; }
+            .forecast-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="top-bar">
+            <div class="logo-text">📊 Kronos AI</div>
+            <div class="subtitle">智能股票预测系统 · 移动版</div>
+        </div>
+        
+        <div class="stock-selector">
+            <button class="stock-button selected" data-stock="000713">000713</button>
+            <button class="stock-button" data-stock="600326">600326</button>
+            <button class="stock-button" data-stock="600487">600487</button>
+            <button class="stock-button" data-stock="600941">600941</button>
+        </div>
+        
+        <div class="prediction-panel">
+            <div class="price-display">
+                <div class="current-label">当前价格</div>
+                <div class="current-value">
+                    <span class="currency">¥</span>
+                    <span id="currentPrice">7.08</span>
+                </div>
+            </div>
+            
+            <div class="forecast-grid" id="forecastGrid">
+                <!-- 动态填充 -->
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <div class="info-row">
+                <span class="info-label">预测模型</span>
+                <span class="info-value">多模型集成</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">时间框架</span>
+                <span class="info-value">日线</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">数据来源</span>
+                <span class="info-value">AkShare/Tencent/Baostock</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">最后更新</span>
+                <span class="info-value" id="lastUpdate">2025-12-18</span>
+            </div>
+        </div>
+        
+        <div class="footer-note">
+            基于Kronos基础模型的多算法预测系统<br>
+            技术指标 · 机器学习 · 支撑阻力位分析<br>
+            本演示使用预计算数据，实际部署可实时获取
+        </div>
+    </div>
+    
+    <script>
+        // 演示数据 - 从现有CSV文件提取
+        const stockData = {
+            '000713': {
+                current: 7.08,
+                predictions: [
+                    {day: 1, price: 6.92, change: -2.26},
+                    {day: 2, price: 6.92, change: -2.23},
+                    {day: 3, price: 6.95, change: -1.89},
+                    {day: 4, price: 6.96, change: -1.75}
+                ]
+            },
+            '600326': {
+                current: 5.62,
+                predictions: [
+                    {day: 1, price: 5.69, change: 1.15},
+                    {day: 2, price: 5.70, change: 1.38},
+                    {day: 3, price: 5.72, change: 1.80},
+                    {day: 4, price: 5.73, change: 1.96}
+                ]
+            },
+            '600487': {
+                current: 19.62,
+                predictions: [
+                    {day: 1, price: 19.71, change: 0.46},
+                    {day: 2, price: 19.73, change: 0.56},
+                    {day: 3, price: 19.76, change: 0.71},
+                    {day: 4, price: 19.77, change: 0.76}
+                ]
+            },
+            '600941': {
+                current: 7.92,
+                predictions: [
+                    {day: 1, price: 7.96, change: 0.45},
+                    {day: 2, price: 7.97, change: 0.63},
+                    {day: 3, price: 7.99, change: 0.90},
+                    {day: 4, price: 8.00, change: 1.01}
+                ]
+            }
+        };
+        
+        function displayStock(stockCode) {
+            const data = stockData[stockCode];
+            if (!data) return;
+            
+            // 更新当前价格
+            document.getElementById('currentPrice').textContent = data.current.toFixed(2);
+            
+            // 更新预测
+            const grid = document.getElementById('forecastGrid');
+            grid.innerHTML = '';
+            
+            data.predictions.forEach(pred => {
+                const item = document.createElement('div');
+                item.className = 'forecast-item';
+                
+                const changeClass = pred.change >= 0 ? 'positive' : 'negative';
+                const changeSymbol = pred.change >= 0 ? '↑' : '↓';
+                
+                item.innerHTML = `
+                    <div class="forecast-label">第${pred.day}日</div>
+                    <div class="forecast-value">¥${pred.price.toFixed(2)}</div>
+                    <div class="forecast-change ${changeClass}">
+                        ${changeSymbol} ${Math.abs(pred.change).toFixed(2)}%
+                    </div>
+                `;
+                
+                grid.appendChild(item);
+            });
+        }
+        
+        // 按钮点击事件
+        document.querySelectorAll('.stock-button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.stock-button').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                displayStock(this.dataset.stock);
+            });
+        });
+        
+        // 初始显示
+        displayStock('000713');
+        
+        // 更新时间
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('zh-CN');
+    </script>
+</body>
+</html>
